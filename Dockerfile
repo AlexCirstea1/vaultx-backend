@@ -1,27 +1,20 @@
-# Use a base image with JDK and Maven installed
-FROM maven:3.8.3-openjdk-17-slim AS build
+#
+# Build stage
+#
+FROM maven:3.9.6-amazoncorretto-21 AS build
+COPY ./src src/
+COPY ./pom.xml pom.xml
+RUN mvn clean package
 
-# Set the working directory in the container
-WORKDIR /app
+#
+# Package stage
+#
+FROM amazoncorretto:21
+COPY --from=build /target/*.jar /app/app.jar
 
-# Copy the Maven configuration files
-COPY pom.xml .
-COPY src ./src
+EXPOSE 8082
 
-# Build the application
-RUN mvn clean package -DskipTests
+# Set the active profile
+ENV SPRING_PROFILES_ACTIVE=tst
 
-# Create a new stage for the application runtime
-FROM openjdk:17-jdk-slim
-
-# Set the working directory in the container
-WORKDIR /app
-
-# Copy the JAR file built in the previous stage
-COPY --from=build /app/target/*.jar app.jar
-
-# Expose the port that the Spring Boot application runs on
-EXPOSE 8081
-
-# Run the Spring Boot application
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java","-Dspring.profiles.active= tst","-jar","/app/app.jar"]

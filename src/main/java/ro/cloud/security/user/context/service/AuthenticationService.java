@@ -83,6 +83,8 @@ public class AuthenticationService {
                         .email(dto.getEmail())
                         .password(encodedPassword)
                         .authorities(roles)
+                        .createdAt(Instant.now())
+                        .updatedAt(Instant.now())
                         .build()
         );
         UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
@@ -107,6 +109,9 @@ public class AuthenticationService {
                     request.getHeader("User-Agent"),
                     Instant.now());
 
+            user.setLastAccessAt(Instant.now());
+            userRepository.save(user);
+
             UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
             userResponseDTO.setHasPin(user.getPin() != null);
             return new LoginResponseDTO(userResponseDTO, accessToken, refreshToken);
@@ -122,6 +127,8 @@ public class AuthenticationService {
             String refreshToken = jsonNode.get("refresh_token").asText();
 
             var user = tokenService.validateRefreshToken(refreshToken);
+            user.setLastAccessAt(Instant.now());
+            userRepository.save(user);
 
             Authentication auth = new UsernamePasswordAuthenticationToken(
                     user.getUsername(),

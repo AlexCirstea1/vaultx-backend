@@ -11,6 +11,7 @@ import ro.cloud.security.user.context.model.User;
 import ro.cloud.security.user.context.repository.RoleRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -47,6 +48,8 @@ public class UserContextApplication implements CommandLineRunner {
 				.email("admin@mail.com")
 				.password(passwordEncoder.encode("admin"))
 				.authorities(roles)
+				.createdAt(Instant.now())
+				.updatedAt(Instant.now())
 				.build());
 	}
 }

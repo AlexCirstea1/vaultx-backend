@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,6 +40,15 @@ public class User implements UserDetails {
     @JsonIgnore
     @Column(name = "pin")
     private String pin;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+
+    @Column(name = "updated_at")
+    private Instant updatedAt;
+
+    @Column(name = "last_access_at")
+    private Instant lastAccessAt;
 
     @Column(name = "refresh_token", length = 1024)
     private String refreshToken;

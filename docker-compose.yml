@@ -22,25 +22,25 @@ services:
     ports:
       - "9092:9092"
 
-  akhq:
-    image: tchiotludo/akhq
-    environment:
-      AKHQ_CONFIGURATION: |
-        akhq:
-          server:
-            access-log: false
-            base-path: /
-            listen: 0.0.0.0:8080
-          security:
-            default-group: admin
-          connections:
-            kafka:
-              properties:
-                bootstrap.servers: "kafka:9092"
-    ports:
-      - "8080:8080"
-    depends_on:
-      - kafka
+#  akhq:
+#    image: tchiotludo/akhq
+#    environment:
+#      AKHQ_CONFIGURATION: |
+#        akhq:
+#          server:
+#            access-log: false
+#            base-path: /
+#            listen: 0.0.0.0:8080
+#          security:
+#            default-group: admin
+#          connections:
+#            kafka:
+#              properties:
+#                bootstrap.servers: "kafka:9092"
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - kafka
 
   redis:
     image: redis:latest

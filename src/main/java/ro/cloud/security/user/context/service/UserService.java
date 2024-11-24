@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,6 +25,7 @@ public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
     private final ModelMapper mapper;
     private final JwtDecoder jwtDecoder;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public UserResponseDTO getUserById(UUID id) {
         var user = userRepository.findById(id).orElseThrow();
@@ -55,5 +57,12 @@ public class UserService implements UserDetailsService {
         var userDto = mapper.map(user, UserResponseDTO.class);
         userDto.setHasPin(user.getPin() != null);
         return userDto;
+    }
+
+    public String deleteUser(HttpServletRequest request) {
+        var user = getSessionUser(request);
+        userRepository.delete(user);
+        redisTemplate.delete(user.getId().toString());
+        return "User and associated data deleted successfully";
     }
 }

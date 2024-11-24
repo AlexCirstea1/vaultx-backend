@@ -17,6 +17,11 @@ import ro.cloud.security.user.context.service.AuthenticationService;
 public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
+    @GetMapping
+    public ResponseEntity.BodyBuilder hello() {
+        return ResponseEntity.ok();
+    }
+
     @GetMapping("/verify")
     public ResponseEntity<Boolean> verifyToken(@RequestHeader("Authorization") String authorizationHeader) {
         String token = authorizationHeader.replace("Bearer ", "");

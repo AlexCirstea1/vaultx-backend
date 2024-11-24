@@ -22,7 +22,9 @@ public class DocumentController {
     private final DocumentService documentService;
 
     @PostMapping("/upload")
-    public ResponseEntity<DocumentMetadata> uploadDocument(HttpServletRequest request, @RequestParam("file" )MultipartFile file) throws IOException, NoSuchAlgorithmException {
+    public ResponseEntity<DocumentMetadata> uploadDocument(
+            HttpServletRequest request,
+            @RequestParam("file" )MultipartFile file) throws IOException, NoSuchAlgorithmException {
         return ResponseEntity.ok(documentService.uploadDocument(request, file));
     }
 }

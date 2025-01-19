@@ -1,13 +1,12 @@
 package ro.cloud.security.user.context.utils;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.stereotype.Component;
-
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.stereotype.Component;
 
 @Component
 @Setter

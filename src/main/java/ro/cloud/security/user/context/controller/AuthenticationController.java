@@ -11,7 +11,7 @@ import ro.cloud.security.user.context.model.dto.UserResponseDTO;
 import ro.cloud.security.user.context.service.AuthenticationService;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 @CrossOrigin("*")
 @AllArgsConstructor
 public class AuthenticationController {
@@ -45,19 +45,25 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.registerUser(dto));
     }
 
+    @PostMapping("/register/default")
+    public ResponseEntity<UserResponseDTO> registerDefaultUser(@RequestBody String password) {
+        return ResponseEntity.ok(authenticationService.registerRandomUser(password));
+    }
+
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> loginUser(HttpServletRequest request, @RequestBody LoginDTO dto) {
-        return  ResponseEntity.ok(authenticationService.loginUser(request, dto));
+        return ResponseEntity.ok(authenticationService.loginUser(request, dto));
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<LoginResponseDTO> refreshAccessToken(HttpServletRequest request, @RequestBody String refreshTokenJson) {
-        return  ResponseEntity.ok(authenticationService.refreshToken(request, refreshTokenJson));
+    public ResponseEntity<LoginResponseDTO> refreshAccessToken(
+            HttpServletRequest request, @RequestBody String refreshTokenJson) {
+        return ResponseEntity.ok(authenticationService.refreshToken(request, refreshTokenJson));
     }
+
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         authenticationService.logout(request);
         return ResponseEntity.ok().build();
     }
-
 }

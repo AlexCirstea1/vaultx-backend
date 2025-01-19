@@ -2,18 +2,17 @@ package ro.cloud.security.user.context.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.time.Instant;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "Users")
@@ -50,16 +49,18 @@ public class User implements UserDetails {
     @Column(name = "last_access_at")
     private Instant lastAccessAt;
 
-    @Column(name = "refresh_token", length = 1024)
+    @Column(name = "refresh_token", length = 2048)
     private String refreshToken;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role",
             joinColumns = {@JoinColumn(name = "user_id")},
-            inverseJoinColumns = {@JoinColumn(name = "role_id")}
-    )
+            inverseJoinColumns = {@JoinColumn(name = "role_id")})
     private Set<Role> authorities = new HashSet<>();
+
+    @Column(name = "public_key", length = 2048)
+    private String publicKey;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

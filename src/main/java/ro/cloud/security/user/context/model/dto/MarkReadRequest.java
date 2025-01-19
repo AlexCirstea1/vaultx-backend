@@ -1,18 +1,14 @@
 package ro.cloud.security.user.context.model.dto;
 
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class UserResponseDTO {
-    private UUID id;
-    private String username;
-    private String email;
-    private boolean hasPin;
+@AllArgsConstructor
+public class MarkReadRequest {
+    private List<UUID> messageIds;
 }

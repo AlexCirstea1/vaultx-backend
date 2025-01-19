@@ -14,6 +14,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -51,24 +52,20 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-         http
-                .csrf(AbstractHttpConfigurer::disable)
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
-                        auth.requestMatchers("/auth/**").permitAll();
-                        auth.requestMatchers("/admin/**").hasAnyRole("ADMIN");
-                        auth.requestMatchers("/user/**").hasAnyRole("ADMIM", "USER");
-                        auth.anyRequest().authenticated();
-                });
+                    auth.requestMatchers("/api/auth/**").permitAll();
+                    auth.requestMatchers("/api/admin/**").hasAnyRole("ADMIN");
+                    auth.requestMatchers("/api/user/**").hasAnyRole("ADMIN", "USER");
+                    auth.requestMatchers("/ws/**").authenticated();
+                    auth.anyRequest().authenticated();
+                })
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-         http.oauth2ResourceServer(oauth2 -> {
-             oauth2.jwt(Customizer.withDefaults());
-             jwtAuthenticationConverter();
-         });
-
-
-         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-         return http.build();
+        return http.build();
     }
 
     @Bean
@@ -78,7 +75,9 @@ public class SecurityConfiguration {
 
     @Bean
     public JwtEncoder jwtEncoder() {
-        JWK jwk = new RSAKey.Builder(keys.getPublicKey()).privateKey(keys.getPrivateKey()).build();
+        JWK jwk = new RSAKey.Builder(keys.getPublicKey())
+                .privateKey(keys.getPrivateKey())
+                .build();
         JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwks);
     }

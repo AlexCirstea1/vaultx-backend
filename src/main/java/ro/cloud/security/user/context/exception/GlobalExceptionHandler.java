@@ -1,5 +1,6 @@
 package ro.cloud.security.user.context.exception;
 
+import java.time.LocalDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AccountStatusException;
@@ -11,8 +12,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
-import java.time.LocalDateTime;
-
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -23,8 +22,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
                 ex.getMessage(),
-                request.getDescription(false)
-        );
+                request.getDescription(false));
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -34,12 +32,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(UsernameNotFoundException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleUsernameNotFoundException(
+            UsernameNotFoundException ex, WebRequest request) {
         return buildErrorResponse(ex, "Username not found", HttpStatus.NOT_FOUND, request);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(UserAlreadyExistsException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExistsException(
+            UserAlreadyExistsException ex, WebRequest request) {
         return buildErrorResponse(ex, "Username or email already in use", HttpStatus.CONFLICT, request);
     }
 
@@ -52,24 +52,21 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(OAuth2AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleOAuth2AuthenticationException(OAuth2AuthenticationException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleOAuth2AuthenticationException(
+            OAuth2AuthenticationException ex, WebRequest request) {
         return buildErrorResponse(ex, "OAuth2 Authentication Error", HttpStatus.UNAUTHORIZED, request);
     }
 
     @ExceptionHandler(CustomBadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleCustomBadCredentialsException(CustomBadCredentialsException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleCustomBadCredentialsException(
+            CustomBadCredentialsException ex, WebRequest request) {
         return buildErrorResponse(ex, ex.getMessage(), HttpStatus.UNAUTHORIZED, request);
     }
 
-    private ResponseEntity<ErrorResponse> buildErrorResponse(Exception ex, String message, HttpStatus status, WebRequest request) {
+    private ResponseEntity<ErrorResponse> buildErrorResponse(
+            Exception ex, String message, HttpStatus status, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse(
-                LocalDateTime.now(),
-                status.value(),
-                status.getReasonPhrase(),
-                message,
-                request.getDescription(false)
-        );
+                LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getDescription(false));
         return new ResponseEntity<>(errorResponse, status);
     }
 }
-

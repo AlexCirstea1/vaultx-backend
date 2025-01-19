@@ -1,6 +1,13 @@
 package ro.cloud.security.user.context.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Base64;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -16,14 +23,6 @@ import ro.cloud.security.user.context.model.UserSession;
 import ro.cloud.security.user.context.model.dto.LoginResponseDTO;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.utils.RSAKeyProperties;
-
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +45,8 @@ public class TokenService {
 
     public String generateJwt(Authentication auth, User user) {
         Instant now = Instant.now();
-        var expirationDateTime = Date.from(ZonedDateTime.now().plusMinutes(ttlInMinutes).toInstant());
+        var expirationDateTime =
+                Date.from(ZonedDateTime.now().plusMinutes(ttlInMinutes).toInstant());
 
         String scope = "";
         if (auth != null) {
@@ -60,15 +60,14 @@ public class TokenService {
         // Convert RSA public key to string representation
         String publicKeyString = Base64.getEncoder().encodeToString(publicKey.getEncoded());
 
-
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
                 .expiresAt(expirationDateTime.toInstant())
                 .subject(user.getId().toString())
-                .claim("username",user.getUsername())
-                .claim("email",user.getEmail())
-                .claim("role",scope)
+                .claim("username", user.getUsername())
+                .claim("email", user.getEmail())
+                .claim("role", scope)
                 .claim("publicKey", publicKeyString)
                 .build();
 
@@ -77,7 +76,8 @@ public class TokenService {
 
     public String generateRefreshToken(User user) {
         Instant now = Instant.now();
-        var expirationDateTime = Date.from(ZonedDateTime.now().plusMinutes(refreshTtlInMinutes).toInstant());
+        var expirationDateTime =
+                Date.from(ZonedDateTime.now().plusMinutes(refreshTtlInMinutes).toInstant());
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")
@@ -87,7 +87,8 @@ public class TokenService {
                 .claim("username", user.getUsername())
                 .build();
 
-        String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        String refreshToken =
+                jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
         user.setRefreshToken(refreshToken);
         userRepository.save(user);
         return refreshToken;
@@ -104,7 +105,8 @@ public class TokenService {
                 throw new RuntimeException("Invalid refresh token: Token does not match the stored token");
             }
 
-            return userRepository.findById(userSession.getUser().getUser().getId())
+            return userRepository
+                    .findById(userSession.getUser().getUser().getId())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         } catch (JwtException e) {
             log.error("Invalid refresh token: {}", e.getMessage());
@@ -112,7 +114,8 @@ public class TokenService {
         }
     }
 
-    public void storeUserSession(User user, String accessToken, String refreshToken, String clientIp, String userAgent, Instant updatedAt) {
+    public void storeUserSession(
+            User user, String accessToken, String refreshToken, String clientIp, String userAgent, Instant updatedAt) {
         var userdto = modelMapper.map(user, LoginResponseDTO.class);
         userdto.setAccessToken(accessToken);
         userdto.setRefreshToken(refreshToken);
@@ -141,7 +144,7 @@ public class TokenService {
                 log.warn("No session found for user ID: {} --> Skipping...", userId);
                 return null;
             }
-            // Explicitly cast or deserialize the object into UserSession
+                // Explicitly cast or deserialize the object into UserSession
             case LinkedHashMap linkedHashMap -> {
                 // Manually map LinkedHashMap to UserSession if needed
                 return objectMapper.convertValue(sessionObject, UserSession.class);
@@ -151,11 +154,12 @@ public class TokenService {
                 return userSession;
             }
             default -> {
-                log.error("Invalid session type for user ID: {}. Expected UserSession but found: {}", userId, sessionObject.getClass());
+                log.error(
+                        "Invalid session type for user ID: {}. Expected UserSession but found: {}",
+                        userId,
+                        sessionObject.getClass());
                 return null;
             }
         }
-
     }
-
 }

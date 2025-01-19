@@ -1,6 +1,8 @@
 package ro.cloud.security.user.context.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Duration;
+import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -13,9 +15,6 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.time.Duration;
-import java.util.Objects;
-
 @Configuration
 @EnableCaching
 @Slf4j
@@ -27,16 +26,20 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
+    public RedisTemplate<String, Object> redisTemplate(
+            RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
 
         try {
-            Objects.requireNonNull(template.getConnectionFactory()).getConnection().ping();
+            Objects.requireNonNull(template.getConnectionFactory())
+                    .getConnection()
+                    .ping();
             if (connectionFactory instanceof LettuceConnectionFactory lettuceConnectionFactory) {
-                String redisUrl = "redis://" + lettuceConnectionFactory.getHostName() + ":" + lettuceConnectionFactory.getPort();
+                String redisUrl =
+                        "redis://" + lettuceConnectionFactory.getHostName() + ":" + lettuceConnectionFactory.getPort();
                 log.info("Redis is connected successfully to URL: {}", redisUrl);
             } else {
                 log.info("Redis is connected successfully");
@@ -53,7 +56,9 @@ public class RedisConfig {
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(60)) // Set cache expiration
                 .disableCachingNullValues()
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper)));
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
+                        new GenericJackson2JsonRedisSerializer(objectMapper)));
     }
 }

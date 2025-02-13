@@ -57,27 +57,22 @@ public class ChatController {
         String senderId = jwt.getSubject();
         chatMessage.setSender(senderId);
 
-        // Create the entity for DB
+        // Build the entity to save
         ChatMessage entity = ChatMessage.builder()
                 .sender(senderId)
                 .recipient(chatMessage.getRecipient())
                 .content(chatMessage.getContent())
-                .timestamp(LocalDateTime.now()) // or chatMessage.getTimestamp() if set by client, but typically server
+                .timestamp(LocalDateTime.now())
                 .isRead(false)
                 .build();
 
-        // Save in DB
+        // Save to DB
         entity = chatMessageRepository.save(entity);
 
-        log.info(
-                "Message [id={}] from {} to {} saved. Content length={}",
-                entity.getId(),
-                senderId,
-                chatMessage.getRecipient(),
-                entity.getContent().length());
+        log.info("Message [id={}] from {} to {} saved. Content length={}",
+                entity.getId(), senderId, chatMessage.getRecipient(), entity.getContent().length());
 
-        // Convert to DTO or reuse entity for broadcast
-        // Possibly hide or transform fields if you want
+        // Create the DTO to broadcast
         ChatMessageDTO outgoing = ChatMessageDTO.builder()
                 .id(entity.getId())
                 .sender(entity.getSender())
@@ -85,12 +80,15 @@ public class ChatController {
                 .content(entity.getContent())
                 .timestamp(entity.getTimestamp())
                 .isRead(entity.isRead())
+                .readTimestamp(entity.getReadTimestamp())
+                // Echo the clientTempId from inbound chatMessage
+                .clientTempId(chatMessage.getClientTempId())
                 .build();
 
-        // 1) Send to recipient's queue
+        // 1) Send to recipient
         messagingTemplate.convertAndSendToUser(entity.getRecipient(), "/queue/messages", outgoing);
 
-        // 2) Send to sender's own queue as a "sent" event, so they can update local state with DB ID
+        // 2) Send "SENT_MESSAGE" to sender (the same payload, but your client can interpret differently)
         messagingTemplate.convertAndSendToUser(entity.getSender(), "/queue/sent", outgoing);
     }
 
@@ -99,7 +97,7 @@ public class ChatController {
      */
     @GetMapping("/api/messages")
     public ResponseEntity<List<ChatMessageDTO>> getMessages(
-            @RequestParam("participantId") String participantId, Authentication authentication) {
+            @RequestParam("recipientId") String participantId, Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
 

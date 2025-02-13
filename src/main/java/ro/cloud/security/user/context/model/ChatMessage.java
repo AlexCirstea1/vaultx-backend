@@ -39,4 +39,7 @@ public class ChatMessage {
 
     @Column(name = "read_timestamp")
     private LocalDateTime readTimestamp;
+
+    @Transient  // If you don't want to store it in the DB
+    private String clientTempId;
 }

@@ -19,4 +19,5 @@ public class ChatMessageDTO {
     private LocalDateTime timestamp;
     private boolean isRead;
     private LocalDateTime readTimestamp;
+    private String clientTempId;
 }

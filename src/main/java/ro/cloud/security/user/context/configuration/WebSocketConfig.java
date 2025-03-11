@@ -12,11 +12,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Use /topic for public broadcasts, /queue for private user-based messages
         registry.enableSimpleBroker("/topic", "/queue");
-        // Inbound messages to @MessageMapping endpoints have this prefix
         registry.setApplicationDestinationPrefixes("/app");
-        // For private messages to a user: messagingTemplate.convertAndSendToUser(userId, ...)
         registry.setUserDestinationPrefix("/user");
     }
 

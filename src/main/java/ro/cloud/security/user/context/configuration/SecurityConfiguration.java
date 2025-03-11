@@ -55,6 +55,13 @@ public class SecurityConfiguration {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
+                    // Allow Swagger UI and API docs endpoints
+                    auth.requestMatchers("/swagger-ui.html").permitAll();
+                    auth.requestMatchers("/swagger-ui/**").permitAll();
+                    auth.requestMatchers("/api-docs/**").permitAll();
+                    auth.requestMatchers("/v3/api-docs/**").permitAll();
+
+                    // Existing endpoints
                     auth.requestMatchers("/api/auth/**").permitAll();
                     auth.requestMatchers("/api/admin/**").hasAnyRole("ADMIN");
                     auth.requestMatchers("/api/user/**").hasAnyRole("ADMIN", "USER");

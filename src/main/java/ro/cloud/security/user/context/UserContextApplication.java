@@ -1,6 +1,5 @@
 package ro.cloud.security.user.context;
 
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -9,9 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import ro.cloud.security.user.context.model.Role;
+import ro.cloud.security.user.context.model.user.Role;
 import ro.cloud.security.user.context.repository.RoleRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
+
+import java.util.Objects;
 
 @SpringBootApplication
 @AllArgsConstructor

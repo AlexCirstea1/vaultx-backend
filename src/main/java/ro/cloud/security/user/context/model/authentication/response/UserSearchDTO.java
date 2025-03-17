@@ -1,9 +1,8 @@
 package ro.cloud.security.user.context.model.authentication.response;
 
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.UUID;
 
 @Data
 @AllArgsConstructor

@@ -1,31 +1,40 @@
 package ro.cloud.security.user.context.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-import ro.cloud.security.user.context.model.messaging.ChatMessage;
-
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import ro.cloud.security.user.context.model.messaging.ChatMessage;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
 
-    // Fetch messages between two users, ordered by timestamp
-    @Query("SELECT m FROM ChatMessage m WHERE (m.sender = :user1 AND m.recipient = :user2) "
-            + "OR (m.sender = :user2 AND m.recipient = :user1) ORDER BY m.timestamp ASC")
-    List<ChatMessage> findConversation(String user1, String user2);
+    /**
+     * Returns all messages where the given user is either the sender or the recipient.
+     */
+    @Query(
+            """
+        SELECT m
+        FROM ChatMessage m
+        WHERE m.sender.id = :userId
+           OR m.recipient.id = :userId
+    """)
+    List<ChatMessage> findBySenderOrRecipient(@Param("userId") UUID userId);
 
-    // Fetch all messages where sender is user1 or recipient is user1
-    List<ChatMessage> findBySenderOrRecipient(String sender, String recipient);
+    /**
+     * Returns messages in a conversation between userA and userB.
+     */
+    @Query(
+            """
+        SELECT m
+        FROM ChatMessage m
+        WHERE (m.sender.id = :userA AND m.recipient.id = :userB)
+           OR (m.sender.id = :userB AND m.recipient.id = :userA)
+    """)
+    List<ChatMessage> findConversation(@Param("userA") UUID userA, @Param("userB") UUID userB);
 
-    // Fetch unread messages sent by sender to recipient
-    @Query("SELECT m FROM ChatMessage m WHERE m.sender = :senderId AND m.recipient = :recipientId AND m.isRead = false")
-    List<ChatMessage> findUnreadMessages(String senderId, String recipientId);
-
-    // Bulk update messages to mark them as read
-    @Modifying
-    @Query("UPDATE ChatMessage m SET m.isRead = true, m.readTimestamp = CURRENT_TIMESTAMP WHERE m.id IN :messageIds")
-    void markMessagesAsRead(List<UUID> messageIds);
+    // If you need a 'findAllById' or other standard methods,
+    // you can rely on JpaRepository's built-in methods.
 }

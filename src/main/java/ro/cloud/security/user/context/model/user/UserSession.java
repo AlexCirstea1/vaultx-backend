@@ -1,13 +1,12 @@
 package ro.cloud.security.user.context.model.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ro.cloud.security.user.context.model.authentication.response.LoginResponseDTO;
-
-import java.time.Instant;
 
 @Data
 @AllArgsConstructor

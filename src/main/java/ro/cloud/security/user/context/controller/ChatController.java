@@ -2,6 +2,8 @@ package ro.cloud.security.user.context.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,8 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
-import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.authentication.response.MessageResponse;
+import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.messaging.dto.ChatMessageDTO;
 import ro.cloud.security.user.context.model.messaging.dto.CreateGroupChatRequest;
 import ro.cloud.security.user.context.model.messaging.dto.GroupChatHistoryDTO;
@@ -21,9 +23,6 @@ import ro.cloud.security.user.context.model.messaging.dto.GroupChatMessageDTO;
 import ro.cloud.security.user.context.service.ChatService;
 import ro.cloud.security.user.context.service.GroupChatService;
 import ro.cloud.security.user.context.service.authentication.UserService;
-
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -67,8 +66,8 @@ public class ChatController {
     }
 
     @PostMapping("/api/chats/mark-as-read")
-    public ResponseEntity<?> markMessagesAsRead(@RequestBody MarkReadRequest markReadRequest,
-                                                Authentication authentication) {
+    public ResponseEntity<?> markMessagesAsRead(
+            @RequestBody MarkReadRequest markReadRequest, Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
         return chatService.markMessagesAsRead(markReadRequest, currentUserId);
@@ -112,7 +111,8 @@ public class ChatController {
     // ---------------------------
 
     @PostMapping("/api/group-chats")
-    public ResponseEntity<?> createGroupChat(@RequestBody CreateGroupChatRequest request, Authentication authentication) {
+    public ResponseEntity<?> createGroupChat(
+            @RequestBody CreateGroupChatRequest request, Authentication authentication) {
         // Optionally, you can verify the creator is in the participant list
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String creatorId = jwt.getSubject();
@@ -124,9 +124,10 @@ public class ChatController {
     }
 
     @PostMapping("/api/group-chats/{groupId}/messages")
-    public ResponseEntity<?> sendGroupMessage(@PathVariable("groupId") UUID groupId,
-                                              @RequestBody GroupChatMessageDTO messageDTO,
-                                              Authentication authentication) {
+    public ResponseEntity<?> sendGroupMessage(
+            @PathVariable("groupId") UUID groupId,
+            @RequestBody GroupChatMessageDTO messageDTO,
+            Authentication authentication) {
         // Set group ID and sender from authentication
         messageDTO.setGroupId(groupId);
         Jwt jwt = (Jwt) authentication.getPrincipal();

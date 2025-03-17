@@ -1,6 +1,7 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -8,8 +9,6 @@ import ro.cloud.security.user.context.exception.CustomBadCredentialsException;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.utils.CipherUtils;
-
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor

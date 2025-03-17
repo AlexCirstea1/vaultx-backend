@@ -1,14 +1,13 @@
 package ro.cloud.security.user.context.service;
 
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.kafka.KafkaProducer;
 import ro.cloud.security.user.context.model.DIDEvent;
 import ro.cloud.security.user.context.model.EventType;
-
-import java.time.Instant;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -26,11 +25,8 @@ public class BlockchainService {
      */
     public void recordDIDEvent(UUID userId, String publicDid, EventType eventType) {
         DIDEvent event = new DIDEvent(
-                userId,
-                publicDid,
-                eventType,
-                Instant.now() // current timestamp
-        );
+                userId, publicDid, eventType, Instant.now() // current timestamp
+                );
 
         kafkaProducer.sendDIDEvent(event);
     }

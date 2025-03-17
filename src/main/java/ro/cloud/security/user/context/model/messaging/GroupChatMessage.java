@@ -1,35 +1,39 @@
 package ro.cloud.security.user.context.model.messaging;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import ro.cloud.security.user.context.model.user.User;
 
 @Entity
-@Table(name = "group_chat_message")
+@Table(name = "group_chat_messages")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupChatMessage {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    // References the group chat
-    @Column(nullable = false)
-    private UUID groupId;
+    // Reference the GroupChat entity instead of storing a raw UUID
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "group_id", nullable = false)
+    private GroupChat group;
 
-    // The sender's user ID (e.g. JWT subject)
-    @Column(nullable = false)
-    private String sender;
+    // The sender is a User entity
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
-    // The message content (plaintext or ciphertext)
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // Timestamp of message creation
     @Column(nullable = false)
     private Instant timestamp;
 }

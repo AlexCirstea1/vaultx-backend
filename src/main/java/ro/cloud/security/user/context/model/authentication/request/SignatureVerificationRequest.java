@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SignatureVerificationRequest {
-    private String message;   // The challenge
+    private String message; // The challenge
     private String signature; // The user's signature in Base64
 }
-

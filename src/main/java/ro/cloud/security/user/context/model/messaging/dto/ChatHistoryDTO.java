@@ -1,8 +1,7 @@
 package ro.cloud.security.user.context.model.messaging.dto;
 
-import lombok.*;
-
 import java.util.List;
+import lombok.*;
 
 @Getter
 @Setter

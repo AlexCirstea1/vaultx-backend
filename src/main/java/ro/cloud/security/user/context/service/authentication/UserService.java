@@ -1,6 +1,9 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -11,14 +14,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
-import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
+import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -30,13 +29,8 @@ public class UserService implements UserDetailsService {
     private final JwtDecoder jwtDecoder;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public UserResponseDTO getUserById(UUID id) {
-        var user = userRepository.findById(id).orElseThrow();
-        return UserResponseDTO.builder()
-                .email(user.getEmail())
-                .username(user.getUsername())
-                .id(id)
-                .build();
+    public User getUserById(UUID id) {
+        return userRepository.findById(id).orElseThrow();
     }
 
     public User getSessionUser(HttpServletRequest request) {

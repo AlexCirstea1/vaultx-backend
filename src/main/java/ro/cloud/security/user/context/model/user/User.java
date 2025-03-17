@@ -2,6 +2,11 @@ package ro.cloud.security.user.context.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,17 +14,11 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.Instant;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
 @Entity
-@Table(name = "Users")
+@Table(name = "users")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class User implements UserDetails {
 
@@ -61,11 +60,13 @@ public class User implements UserDetails {
     private Set<Role> authorities = new HashSet<>();
 
     @Column(name = "public_did", columnDefinition = "TEXT")
-    private String publicDid;   // e.g., the public key in some canonical form
+    private String publicDid;
 
     @Column(name = "private_did_encrypted", columnDefinition = "TEXT")
-    private String privateDidEncrypted; // optional - store encrypted private key if needed
+    private String privateDidEncrypted;
 
+    @Column(name = "profile_image", columnDefinition = "TEXT")
+    private String profileImage;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

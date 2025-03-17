@@ -1,6 +1,13 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Base64;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -16,14 +23,6 @@ import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.model.user.UserSession;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.utils.RSAKeyProperties;
-
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

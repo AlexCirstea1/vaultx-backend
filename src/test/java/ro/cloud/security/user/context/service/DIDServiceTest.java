@@ -1,12 +1,10 @@
 package ro.cloud.security.user.context.service;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import ro.cloud.security.user.context.service.authentication.DIDService;
-
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Base64;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 class DIDServiceTest {
 
@@ -20,8 +18,8 @@ class DIDServiceTest {
         KeyPair keyPair = keyGen.generateKeyPair();
 
         // 2) Convert public key to Base64 (simulating what you'd store in publicDid)
-        String publicKeyBase64 = Base64.getEncoder()
-                .encodeToString(keyPair.getPublic().getEncoded());
+        String publicKeyBase64 =
+                Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
 
         // 3) Prepare a test message
         String message = "Hello from DIDServiceTest";
@@ -38,16 +36,13 @@ class DIDServiceTest {
 
         // 5) Use DIDService to verify the signature
         boolean isValid = didService.verifyUserSignature(
-                publicKeyBase64,  // The stored public DID
-                message,          // The message we signed
-                signatureBase64   // The signature from the private key
-        );
+                publicKeyBase64, // The stored public DID
+                message, // The message we signed
+                signatureBase64 // The signature from the private key
+                );
 
         // 6) Assert that verification succeeds
-        Assertions.assertTrue(
-                isValid,
-                "Signature should be valid when verified with matching public key and message."
-        );
+        Assertions.assertTrue(isValid, "Signature should be valid when verified with matching public key and message.");
     }
 
     @Test
@@ -58,8 +53,8 @@ class DIDServiceTest {
         KeyPair keyPair = keyGen.generateKeyPair();
 
         // 2) Convert public key to Base64
-        String publicKeyBase64 = Base64.getEncoder()
-                .encodeToString(keyPair.getPublic().getEncoded());
+        String publicKeyBase64 =
+                Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
 
         // 3) Sign one message
         String originalMessage = "Original message";
@@ -72,10 +67,9 @@ class DIDServiceTest {
         // 4) Attempt to verify with a different message
         String differentMessage = "Tampered message";
         boolean isValid = didService.verifyUserSignature(
-                publicKeyBase64,  // same public key
+                publicKeyBase64, // same public key
                 differentMessage, // different from the original
-                signatureBase64
-        );
+                signatureBase64);
 
         // 5) This should fail
         Assertions.assertFalse(isValid, "Verification should fail for a tampered message.");

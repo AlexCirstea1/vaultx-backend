@@ -1,20 +1,25 @@
 package ro.cloud.security.user.context.service;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.messaging.GroupChat;
 import ro.cloud.security.user.context.model.messaging.GroupChatMessage;
-import ro.cloud.security.user.context.model.messaging.dto.GroupChatMessageDTO;
 import ro.cloud.security.user.context.model.messaging.dto.GroupChatHistoryDTO;
+import ro.cloud.security.user.context.model.messaging.dto.GroupChatMessageDTO;
+import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.GroupChatMessageRepository;
 import ro.cloud.security.user.context.repository.GroupChatRepository;
-
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import ro.cloud.security.user.context.service.authentication.UserService;
 
 @Service
 @AllArgsConstructor
@@ -25,45 +30,72 @@ public class GroupChatService {
     private final GroupChatMessageRepository groupChatMessageRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final ModelMapper modelMapper;
+    private final UserService userService;
+    private final BlockchainService blockchainService;
 
     /**
-     * Creates a new group chat with the given name and participants.
+     * Creates a new group chat with the given name and participants (UUID strings).
      */
     public GroupChat createGroupChat(String groupName, List<String> participantIds) {
+        // Convert each participant ID string to a User entity
+        Set<User> participantUsers = participantIds.stream()
+                .map(idStr -> {
+                    UUID userUuid = UUID.fromString(idStr);
+                    return userService.getUserById(userUuid);
+                })
+                .collect(Collectors.toSet());
+
+        // 1) Create and save the group
         GroupChat groupChat = GroupChat.builder()
                 .groupName(groupName)
-                .participantIds(new HashSet<>(participantIds))
+                .participants(participantUsers)
                 .createdAt(Instant.now())
                 .build();
-        return groupChatRepository.save(groupChat);
+        groupChat = groupChatRepository.save(groupChat);
+
+        // 2) Record a pairing event for each user
+        for (User user : participantUsers) {
+            blockchainService.recordDIDEvent(user.getId(), user.getPublicDid(), EventType.PAIRING);
+        }
+        log.info("Recorded group pairing event on blockchain for group: {}", groupChat.getId());
+
+        return groupChat;
     }
 
     /**
-     * Adds a participant to an existing group chat.
+     * Adds a participant (string ID) to an existing group chat.
      */
-    public GroupChat addParticipant(UUID groupId, String participantId) {
+    public GroupChat addParticipant(UUID groupId, String participantIdStr) {
         Optional<GroupChat> optionalGroup = groupChatRepository.findById(groupId);
-        if (optionalGroup.isPresent()) {
-            GroupChat groupChat = optionalGroup.get();
-            groupChat.getParticipantIds().add(participantId);
-            groupChat.setUpdatedAt(Instant.now());
-            return groupChatRepository.save(groupChat);
+        if (optionalGroup.isEmpty()) {
+            throw new RuntimeException("Group not found");
         }
-        throw new RuntimeException("Group not found");
+
+        GroupChat groupChat = optionalGroup.get();
+        UUID participantUuid = UUID.fromString(participantIdStr);
+        User participantUser = userService.getUserById(participantUuid);
+
+        groupChat.getParticipants().add(participantUser);
+        groupChat.setUpdatedAt(Instant.now());
+        return groupChatRepository.save(groupChat);
     }
 
     /**
      * Removes a participant from a group chat.
      */
-    public GroupChat removeParticipant(UUID groupId, String participantId) {
+    public GroupChat removeParticipant(UUID groupId, String participantIdStr) {
         Optional<GroupChat> optionalGroup = groupChatRepository.findById(groupId);
-        if (optionalGroup.isPresent()) {
-            GroupChat groupChat = optionalGroup.get();
-            groupChat.getParticipantIds().remove(participantId);
-            groupChat.setUpdatedAt(Instant.now());
-            return groupChatRepository.save(groupChat);
+        if (optionalGroup.isEmpty()) {
+            throw new RuntimeException("Group not found");
         }
-        throw new RuntimeException("Group not found");
+
+        GroupChat groupChat = optionalGroup.get();
+        UUID participantUuid = UUID.fromString(participantIdStr);
+        User participantUser = userService.getUserById(participantUuid);
+
+        groupChat.getParticipants().remove(participantUser);
+        groupChat.setUpdatedAt(Instant.now());
+        return groupChatRepository.save(groupChat);
     }
 
     /**
@@ -71,28 +103,58 @@ public class GroupChatService {
      * to a topic specific to the group.
      */
     public void sendGroupMessage(GroupChatMessageDTO messageDTO) {
+        // 1) Fetch the group
+        UUID groupId = messageDTO.getGroupId();
+        GroupChat group =
+                groupChatRepository.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
+
+        // 2) Fetch the sender as a User
+        UUID senderUuid = UUID.fromString(messageDTO.getSender());
+        User senderUser = userService.getUserById(senderUuid);
+
+        // 3) Build and save the GroupChatMessage
         GroupChatMessage message = GroupChatMessage.builder()
-                .groupId(messageDTO.getGroupId())
-                .sender(messageDTO.getSender())
+                .group(group)
+                .sender(senderUser)
                 .content(messageDTO.getContent())
                 .timestamp(Instant.now())
                 .build();
+
         message = groupChatMessageRepository.save(message);
+
+        // 4) Convert to DTO for broadcasting
         GroupChatMessageDTO outgoing = modelMapper.map(message, GroupChatMessageDTO.class);
-        // Broadcast to all subscribers of the group topic
-        messagingTemplate.convertAndSend("/topic/group/" + messageDTO.getGroupId(), outgoing);
+        // We'll set groupId and sender as strings to match your existing DTO pattern
+        outgoing.setGroupId(groupId);
+        outgoing.setSender(senderUuid.toString());
+
+        // 5) Broadcast to all subscribers of the group topic
+        messagingTemplate.convertAndSend("/topic/group/" + groupId, outgoing);
     }
 
     /**
      * Retrieves the history of messages for a given group chat.
      */
     public GroupChatHistoryDTO getGroupChatHistory(UUID groupId) {
+        // 1) Find all messages for that group, ordered by timestamp
         List<GroupChatMessage> messages = groupChatMessageRepository.findByGroupIdOrderByTimestampAsc(groupId);
+
+        // 2) Convert each entity to a GroupChatMessageDTO
         List<GroupChatMessageDTO> messageDTOs = messages.stream()
-                .map(m -> modelMapper.map(m, GroupChatMessageDTO.class))
+                .map(m -> {
+                    GroupChatMessageDTO dto = modelMapper.map(m, GroupChatMessageDTO.class);
+                    dto.setGroupId(groupId);
+                    // Convert the sender user ID to string
+                    dto.setSender(m.getSender().getId().toString());
+                    return dto;
+                })
                 .collect(Collectors.toList());
-        Optional<GroupChat> optionalGroup = groupChatRepository.findById(groupId);
-        String groupName = optionalGroup.map(GroupChat::getGroupName).orElse("Unknown");
+
+        // 3) Retrieve the group name (if found)
+        GroupChat group = groupChatRepository.findById(groupId).orElse(null);
+        String groupName = (group != null) ? group.getGroupName() : "Unknown";
+
+        // 4) Build the history DTO
         return GroupChatHistoryDTO.builder()
                 .groupId(groupId)
                 .groupName(groupName)

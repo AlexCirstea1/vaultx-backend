@@ -1,16 +1,16 @@
 package ro.cloud.security.user.context.model.messaging;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+import ro.cloud.security.user.context.model.user.User;
 
 @Entity
-@Table(name = "chat_message")
+@Table(name = "chat_messages")
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,18 +21,22 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(name = "sender", nullable = false)
-    private String sender; // e.g., JWT subject
+    // Instead of storing sender as String, store a reference to the User entity
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
-    @Column(name = "recipient", nullable = false)
-    private String recipient; // e.g., JWT subject
+    // Instead of storing recipient as String, store a reference to the User entity
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "recipient_id", nullable = false)
+    private User recipient;
 
     @Column(name = "content", columnDefinition = "TEXT", nullable = false)
-    private String content; // The plaintext message body (or ciphertext, depending on your design)
+    private String content;
 
     @Column(name = "timestamp", nullable = false)
     @Builder.Default
-    private LocalDateTime timestamp = LocalDateTime.now(); // Server-side creation time
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     @Column(name = "is_read", nullable = false)
     @Builder.Default
@@ -41,6 +45,6 @@ public class ChatMessage {
     @Column(name = "read_timestamp")
     private LocalDateTime readTimestamp;
 
-    @Transient  // If you don't want to store it in the DB
+    @Transient // If you don't want to store it in DB
     private String clientTempId;
 }

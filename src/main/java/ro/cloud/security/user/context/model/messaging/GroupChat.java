@@ -1,20 +1,24 @@
 package ro.cloud.security.user.context.model.messaging;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import ro.cloud.security.user.context.model.user.User;
 
 @Entity
-@Table(name = "group_chat")
+@Table(name = "group_chats")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupChat {
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
@@ -22,11 +26,13 @@ public class GroupChat {
     @Column(nullable = false)
     private String groupName;
 
-    // A collection of user IDs participating in the group chat
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "group_chat_participants", joinColumns = @JoinColumn(name = "group_chat_id"))
-    @Column(name = "participant_id")
-    private Set<String> participantIds = new HashSet<>();
+    // Instead of storing participantIds as strings, we create a many-to-many to the User table
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "group_chat_participants",
+            joinColumns = @JoinColumn(name = "group_chat_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id"))
+    private Set<User> participants = new HashSet<>();
 
     @Column(nullable = false)
     private Instant createdAt;

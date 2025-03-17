@@ -3,6 +3,8 @@ package ro.cloud.security.user.context.service.authentication;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -18,9 +20,6 @@ import ro.cloud.security.user.context.model.authentication.response.LoginRespons
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
-
-import java.io.IOException;
-import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor

@@ -1,11 +1,10 @@
 package ro.cloud.security.user.context.model.messaging.dto;
 
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 @Data
 public class CreateGroupChatRequest {
     private String groupName;
-    private List<String> participantIds;  // Include creator's ID as well
+    private List<String> participantIds;
 }

@@ -1,6 +1,17 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import com.github.javafaker.Faker;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -17,13 +28,6 @@ import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.service.BlockchainService;
 import ro.cloud.security.user.context.utils.CipherUtils;
 import ro.cloud.security.user.context.utils.KeyGeneratorUtility;
-
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +51,8 @@ public class RegistrationService {
             return createUser(dto.getUsername(), dto.getEmail(), encodedPassword);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error generating keys", e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -59,25 +65,26 @@ public class RegistrationService {
                     passwordEncoder.encode(password));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error generating keys", e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
     private UserResponseDTO createUser(String username, String email, String encodedPassword)
-            throws NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException, IOException {
 
         var userRole = roleRepository.findByAuthority("USER").orElseThrow();
 
-        // Generate DID key pair
+        // 1) Generate DID key pair
         KeyPair keyPair = KeyGeneratorUtility.generateRSAKey();
         String publicKeyBase64 = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
         String privateKeyBase64 = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
         String encryptedPrivateKey = CipherUtils.encryptPrivateKey(privateKeyBase64);
 
-        // Set up user roles
+        // 2) Create user entity
         Set<Role> roles = new HashSet<>();
         roles.add(userRole);
 
-        // Create and save user
         User user = User.builder()
                 .username(username)
                 .email(email)
@@ -87,17 +94,37 @@ public class RegistrationService {
                 .updatedAt(Instant.now())
                 .publicDid(publicKeyBase64)
                 .privateDidEncrypted(encryptedPrivateKey)
+                // .profileImage is null for now
                 .build();
 
+        // 3) Save user (so we have user.id)
         user = userRepository.save(user);
 
-        // Create response DTO
+        // 4) Generate the DiceBear URL (for example, "thumbs" style in v9)
+        String diceBearUrl = "https://api.dicebear.com/9.x/thumbs/png?seed=" + user.getId();
+
+        // 5) Fetch the SVG text
+        user.setProfileImage(fetchDiceBearPngAsBase64(diceBearUrl));
+        user = userRepository.save(user);
+
+        // 7) Build response
         UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
         userResponseDTO.setHasPin(user.getPin() != null);
 
+        // 8) Log event on blockchain
         blockchainService.recordDIDEvent(user.getId(), user.getPublicDid(), EventType.REGISTER);
 
         return userResponseDTO;
+    }
+
+    /**
+     * Helper method to fetch the text from the DiceBear URL.
+     */
+    private String fetchDiceBearPngAsBase64(String avatarUrl) throws IOException {
+        try (InputStream in = new URL(avatarUrl).openStream()) {
+            byte[] pngBytes = in.readAllBytes();
+            return Base64.getEncoder().encodeToString(pngBytes);
+        }
     }
 
     private String generateUsername() {

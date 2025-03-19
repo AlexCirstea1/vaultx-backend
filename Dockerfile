@@ -12,7 +12,7 @@ RUN mvn clean package
 FROM amazoncorretto:21
 COPY --from=build /target/*.jar /app/app.jar
 
-EXPOSE 8082
+EXPOSE 8081
 
 # Set the active profile
 ENV SPRING_PROFILES_ACTIVE=test

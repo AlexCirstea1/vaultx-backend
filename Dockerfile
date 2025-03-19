@@ -17,4 +17,4 @@ EXPOSE 8082
 # Set the active profile
 ENV SPRING_PROFILES_ACTIVE=test
 
-ENTRYPOINT ["java","-Dspring.profiles.active= test","-jar","/app/app.jar"]
+ENTRYPOINT ["java","-Dspring.profiles.active=test","-jar","/app/app.jar"]

@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.PublicKeyResponse;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.user.User;
@@ -92,9 +93,9 @@ public class UserService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    public String getUserPublicKey(UUID userId) {
+    public PublicKeyResponse getUserPublicKey(UUID userId) {
         User user = getUserById(userId);
-        return user.getPublicKey();
+        return PublicKeyResponse.builder().publicKey(user.getPublicKey()).version(user.getCurrentKeyVersion()).build();
     }
 
     public String saveUserPublicKey(HttpServletRequest request, String publicKey) {
@@ -123,8 +124,9 @@ public class UserService implements UserDetailsService {
         String message = isRotation ? "Public key rotated successfully." : "Public key registered successfully.";
         log.info(message);
 
-        return user.getPublicKey();
+        return user.getCurrentKeyVersion();
     }
+
 
     private String generateNextKeyVersion(String currentVersion) {
         // For example, assume versions are "v1", "v2", etc.

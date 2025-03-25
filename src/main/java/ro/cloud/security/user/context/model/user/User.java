@@ -52,9 +52,6 @@ public class User implements UserDetails {
     @Column(name = "refresh_token", length = 2048)
     private String refreshToken;
 
-    @Column(name = "current_key_version")
-    private String currentKeyVersion;
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role",
@@ -64,6 +61,9 @@ public class User implements UserDetails {
 
     @Column(name = "public_key", columnDefinition = "TEXT")
     private String publicKey;
+
+    @Column(name = "current_key_version")
+    private String currentKeyVersion;
 
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;

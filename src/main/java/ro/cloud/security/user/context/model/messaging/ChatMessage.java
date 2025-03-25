@@ -29,14 +29,17 @@ public class ChatMessage {
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
-    @Column(name = "key_version")
-    private String keyVersion;
+    @Column(name = "sender_key_version")
+    private String senderKeyVersion;
+
+    @Column(name = "recipient_key_version")
+    private String recipientKeyVersion;
 
     /**
      * Now we store encrypted text instead of plaintext.
      * Could be Base64-encoded AES-GCM ciphertext, for example.
      */
-    @Column(name = "cihper_text", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "cipher_text", columnDefinition = "TEXT", nullable = false)
     private String ciphertext;
 
     /**
@@ -66,4 +69,3 @@ public class ChatMessage {
     @Transient
     private String clientTempId;
 }
-

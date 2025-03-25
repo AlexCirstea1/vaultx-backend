@@ -22,7 +22,8 @@ public class ChatMessageDTO {
     private String iv;
     private String encryptedKeyForSender;
     private String encryptedKeyForRecipient;
-    private String keyVersion;
+    private String senderKeyVersion;
+    private String recipientKeyVersion;
 
     private LocalDateTime timestamp;
     private boolean isRead;

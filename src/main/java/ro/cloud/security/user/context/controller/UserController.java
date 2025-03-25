@@ -7,12 +7,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import ro.cloud.security.user.context.model.PublicKeyResponse;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.service.authentication.UserService;
@@ -82,18 +81,11 @@ public class UserController {
                     @ApiResponse(responseCode = "200", description = "Public key retrieved successfully"),
                     @ApiResponse(responseCode = "404", description = "User or public key not found", content = @Content)
             })
-    public ResponseEntity<String> getUserPublicKey(@PathVariable UUID id) {
+    public ResponseEntity<PublicKeyResponse> getUserPublicKey(@PathVariable UUID id) {
         try {
-            String publicKey = userService.getUserPublicKey(id);
+            var response = userService.getUserPublicKey(id);
 
-            if (publicKey == null || publicKey.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.TEXT_PLAIN);
-
-            return new ResponseEntity<>(publicKey, headers, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }

@@ -61,7 +61,8 @@ public class ChatService {
                 .encryptedKeyForRecipient(chatMessageDto.getEncryptedKeyForRecipient())
                 .encryptedKeyForSender(chatMessageDto.getEncryptedKeyForSender())
                 .iv(chatMessageDto.getIv())
-                .keyVersion(chatMessageDto.getKeyVersion())
+                .senderKeyVersion(chatMessageDto.getSenderKeyVersion())
+                .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
                 .timestamp(LocalDateTime.now())
                 .isRead(false)
                 .build();
@@ -73,6 +74,18 @@ public class ChatService {
         baseDto.setRecipient(entity.getRecipient().getId().toString());
         baseDto.setClientTempId(chatMessageDto.getClientTempId());
 
+        baseDto.setCiphertext(entity.getCiphertext());
+        baseDto.setEncryptedKeyForRecipient(entity.getEncryptedKeyForRecipient());
+        baseDto.setEncryptedKeyForSender(entity.getEncryptedKeyForSender());
+        baseDto.setIv(entity.getIv());
+
+        baseDto.setSenderKeyVersion(entity.getSenderKeyVersion());
+        baseDto.setRecipientKeyVersion(entity.getRecipientKeyVersion());
+
+        baseDto.setRead(entity.isRead());
+        baseDto.setReadTimestamp(entity.getReadTimestamp());
+        baseDto.setClientTempId(chatMessageDto.getClientTempId());
+
         // Make "INCOMING_MESSAGE" + "SENT_MESSAGE"
         ChatMessageDTO toRecipient = cloneMessageDTO(baseDto);
         toRecipient.setType("INCOMING_MESSAGE");
@@ -82,9 +95,17 @@ public class ChatService {
 
         // Broadcast
         messagingTemplate.convertAndSendToUser(
-                recipientUuid.toString(), "/queue/messages", toRecipient);
+                recipientUuid.toString(),
+                "/queue/messages",
+                toRecipient // type: "INCOMING_MESSAGE"
+        );
+
         messagingTemplate.convertAndSendToUser(
-                senderUuid.toString(), "/queue/messages", toSender);
+                senderUuid.toString(),
+                "/queue/sent",
+                toSender // type: "SENT_MESSAGE"
+        );
+
     }
 
     private ChatMessageDTO cloneMessageDTO(ChatMessageDTO original) {
@@ -92,6 +113,8 @@ public class ChatService {
         copy.setId(original.getId());
         copy.setSender(original.getSender());
         copy.setRecipient(original.getRecipient());
+        copy.setRecipientKeyVersion(original.getRecipientKeyVersion());
+        copy.setEncryptedKeyForRecipient(original.getEncryptedKeyForRecipient());
         copy.setCiphertext(original.getCiphertext());
         copy.setEncryptedKeyForRecipient(original.getEncryptedKeyForRecipient());
         copy.setEncryptedKeyForSender(original.getEncryptedKeyForSender());

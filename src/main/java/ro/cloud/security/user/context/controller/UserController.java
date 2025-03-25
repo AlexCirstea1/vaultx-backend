@@ -73,5 +73,41 @@ public class UserController {
         return ResponseEntity.ok(user.getProfileImage());
     }
 
+    @GetMapping("/publicKey/{id}")
+    @Transactional(readOnly = true)
+    @Operation(
+            summary = "Get user public key",
+            description = "Retrieves a user's public key by their ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Public key retrieved successfully"),
+                    @ApiResponse(responseCode = "404", description = "User or public key not found", content = @Content)
+            })
+    public ResponseEntity<String> getUserPublicKey(@PathVariable UUID id) {
+        try {
+            String publicKey = userService.getUserPublicKey(id);
 
+            if (publicKey == null || publicKey.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.TEXT_PLAIN);
+
+            return new ResponseEntity<>(publicKey, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/publicKey")
+    public ResponseEntity<String> saveUserPublicKey(
+            HttpServletRequest request,
+            @RequestBody(required = false) String publicKey
+    ) {
+        if (publicKey == null || publicKey.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Public key is required.");
+        }
+        var response = userService.saveUserPublicKey(request, publicKey.trim());
+        return ResponseEntity.ok(response);
+    }
 }

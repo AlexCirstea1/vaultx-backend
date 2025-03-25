@@ -179,7 +179,7 @@ public class AuthenticationController {
     public ResponseEntity<Boolean> verifySignature(
             HttpServletRequest request, @RequestBody SignatureVerificationRequest body) {
         var user = userService.getSessionUser(request);
-        boolean isValid = didService.verifyUserSignature(user.getPublicDid(), body.getMessage(), body.getSignature());
+        boolean isValid = didService.verifyUserSignature(user.getPublicKey(), body.getMessage(), body.getSignature());
         return ResponseEntity.ok(isValid);
     }
 }

@@ -53,15 +53,15 @@ public class ChatController {
     }
 
     @GetMapping("/api/chats")
-    public ResponseEntity<?> getChatHistory(Authentication authentication) {
+    public ResponseEntity<?> getChatSummaries(Authentication authentication) {
         try {
             Jwt jwt = (Jwt) authentication.getPrincipal();
             String currentUserId = jwt.getSubject();
-            return ResponseEntity.ok(chatService.getChatHistory(currentUserId));
+            return ResponseEntity.ok(chatService.getChatSummaries(currentUserId));
         } catch (Exception e) {
-            log.error("Error fetching chat history", e);
+            log.error("Error fetching chat summaries", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while fetching chat history.");
+                    .body("An error occurred while fetching chat summaries.");
         }
     }
 
@@ -74,10 +74,10 @@ public class ChatController {
     }
 
     @MessageMapping("/markAsRead")
-    public void markAsReadViaStomp(String payload, Authentication authentication) {
+    public void markAsReadViaStomp(@RequestBody MarkReadRequest markReadRequest, Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
-        chatService.markAsReadViaStomp(payload, currentUserId);
+        chatService.markAsReadViaStomp(markReadRequest, currentUserId);
     }
 
     /**

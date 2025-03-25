@@ -52,6 +52,9 @@ public class User implements UserDetails {
     @Column(name = "refresh_token", length = 2048)
     private String refreshToken;
 
+    @Column(name = "current_key_version")
+    private String currentKeyVersion;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role",
@@ -59,11 +62,8 @@ public class User implements UserDetails {
             inverseJoinColumns = {@JoinColumn(name = "role_id")})
     private Set<Role> authorities = new HashSet<>();
 
-    @Column(name = "public_did", columnDefinition = "TEXT")
-    private String publicDid;
-
-    @Column(name = "private_did_encrypted", columnDefinition = "TEXT")
-    private String privateDidEncrypted;
+    @Column(name = "public_key", columnDefinition = "TEXT")
+    private String publicKey;
 
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;

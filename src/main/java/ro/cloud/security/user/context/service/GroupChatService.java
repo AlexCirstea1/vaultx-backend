@@ -55,7 +55,7 @@ public class GroupChatService {
 
         // 2) Record a pairing event for each user
         for (User user : participantUsers) {
-            blockchainService.recordDIDEvent(user.getId(), user.getPublicDid(), EventType.PAIRING);
+            blockchainService.recordDIDEvent(user.getId(), user.getPublicKey(), EventType.PAIRING);
         }
         log.info("Recorded group pairing event on blockchain for group: {}", groupChat.getId());
 

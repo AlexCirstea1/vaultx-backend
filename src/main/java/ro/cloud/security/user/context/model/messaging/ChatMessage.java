@@ -21,18 +21,36 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    // Instead of storing sender as String, store a reference to the User entity
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
-    // Instead of storing recipient as String, store a reference to the User entity
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
-    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
-    private String content;
+    @Column(name = "key_version")
+    private String keyVersion;
+
+    /**
+     * Now we store encrypted text instead of plaintext.
+     * Could be Base64-encoded AES-GCM ciphertext, for example.
+     */
+    @Column(name = "cihper_text", columnDefinition = "TEXT", nullable = false)
+    private String ciphertext;
+
+    /**
+     * For AES-GCM, you also need an IV/nonce.
+     * Store it as Base64 or hex string.
+     */
+    @Column(name = "iv", columnDefinition = "TEXT")
+    private String iv;
+
+    @Column(name = "encrypted_key_for_sender", columnDefinition = "TEXT")
+    private String encryptedKeyForSender;
+
+    @Column(name = "encrypted_key_for_recipient", columnDefinition = "TEXT")
+    private String encryptedKeyForRecipient;
 
     @Column(name = "timestamp", nullable = false)
     @Builder.Default
@@ -45,6 +63,7 @@ public class ChatMessage {
     @Column(name = "read_timestamp")
     private LocalDateTime readTimestamp;
 
-    @Transient // If you don't want to store it in DB
+    @Transient
     private String clientTempId;
 }
+

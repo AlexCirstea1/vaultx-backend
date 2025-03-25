@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.user.User;
+import ro.cloud.security.user.context.model.user.UserKeyHistory;
+import ro.cloud.security.user.context.repository.UserKeyHistoryRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 
 @Slf4j
@@ -28,6 +30,7 @@ public class UserService implements UserDetailsService {
     private final ModelMapper mapper;
     private final JwtDecoder jwtDecoder;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final UserKeyHistoryRepository userKeyHistoryRepository;
 
     public User getUserById(UUID id) {
         return userRepository.findById(id).orElseThrow();
@@ -88,4 +91,53 @@ public class UserService implements UserDetailsService {
                 .map(user -> new UserSearchDTO(user.getId(), user.getUsername()))
                 .collect(Collectors.toList());
     }
+
+    public String getUserPublicKey(UUID userId) {
+        User user = getUserById(userId);
+        return user.getPublicKey();
+    }
+
+    public String saveUserPublicKey(HttpServletRequest request, String publicKey) {
+        User user = getSessionUser(request);
+        boolean isRotation = (user.getPublicKey() != null && !user.getPublicKey().trim().isEmpty());
+
+        if (isRotation) {
+            // Save the old key into history
+            UserKeyHistory keyHistory = new UserKeyHistory();
+            keyHistory.setUserId(user.getId().toString());
+            keyHistory.setKeyVersion(user.getCurrentKeyVersion());
+            keyHistory.setPublicKey(user.getPublicKey());
+            userKeyHistoryRepository.save(keyHistory);
+
+            // Generate the new key version (e.g., increment a version number)
+            String newVersion = generateNextKeyVersion(user.getCurrentKeyVersion());
+            user.setPublicKey(publicKey.trim());
+            user.setCurrentKeyVersion(newVersion);
+        } else {
+            // First-time registration of the public key
+            user.setPublicKey(publicKey.trim());
+            user.setCurrentKeyVersion("v1");
+        }
+        userRepository.save(user);
+
+        String message = isRotation ? "Public key rotated successfully." : "Public key registered successfully.";
+        log.info(message);
+
+        return user.getPublicKey();
+    }
+
+    private String generateNextKeyVersion(String currentVersion) {
+        // For example, assume versions are "v1", "v2", etc.
+        int nextVersionNumber = 1;
+        try {
+            if (currentVersion != null && currentVersion.startsWith("v")) {
+                int current = Integer.parseInt(currentVersion.substring(1));
+                nextVersionNumber = current + 1;
+            }
+        } catch (NumberFormatException e) {
+            // fallback to v1 if current version is not parsable
+        }
+        return "v" + nextVersionNumber;
+    }
+
 }

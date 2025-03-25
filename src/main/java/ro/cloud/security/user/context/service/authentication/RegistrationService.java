@@ -5,7 +5,6 @@ import com.github.javafaker.Faker;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -26,7 +25,6 @@ import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.RoleRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.service.BlockchainService;
-import ro.cloud.security.user.context.utils.CipherUtils;
 import ro.cloud.security.user.context.utils.KeyGeneratorUtility;
 
 @Service
@@ -75,13 +73,6 @@ public class RegistrationService {
 
         var userRole = roleRepository.findByAuthority("USER").orElseThrow();
 
-        // 1) Generate DID key pair
-        KeyPair keyPair = KeyGeneratorUtility.generateRSAKey();
-        String publicKeyBase64 = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
-        String privateKeyBase64 = Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded());
-        String encryptedPrivateKey = CipherUtils.encryptPrivateKey(privateKeyBase64);
-
-        // 2) Create user entity
         Set<Role> roles = new HashSet<>();
         roles.add(userRole);
 
@@ -92,9 +83,6 @@ public class RegistrationService {
                 .authorities(roles)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
-                .publicDid(publicKeyBase64)
-                .privateDidEncrypted(encryptedPrivateKey)
-                // .profileImage is null for now
                 .build();
 
         // 3) Save user (so we have user.id)
@@ -112,7 +100,7 @@ public class RegistrationService {
         userResponseDTO.setHasPin(user.getPin() != null);
 
         // 8) Log event on blockchain
-        blockchainService.recordDIDEvent(user.getId(), user.getPublicDid(), EventType.REGISTER);
+        blockchainService.recordDIDEvent(user.getId(), user.getPublicKey(), EventType.REGISTER);
 
         return userResponseDTO;
     }

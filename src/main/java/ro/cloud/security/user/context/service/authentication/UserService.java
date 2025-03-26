@@ -34,7 +34,7 @@ public class UserService implements UserDetailsService {
     private final UserKeyHistoryRepository userKeyHistoryRepository;
 
     public User getUserById(UUID id) {
-        return userRepository.findById(id).orElseThrow();
+        return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
     public User getSessionUser(HttpServletRequest request) {
@@ -142,4 +142,8 @@ public class UserService implements UserDetailsService {
         return "v" + nextVersionNumber;
     }
 
+    public void setConsent(boolean consent, User user) {
+        user.setBlockchainConsent(consent);
+        userRepository.save(user);
+    }
 }

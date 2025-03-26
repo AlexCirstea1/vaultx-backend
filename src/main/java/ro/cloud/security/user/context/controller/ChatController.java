@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -78,6 +80,12 @@ public class ChatController {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
         chatService.markAsReadViaStomp(markReadRequest, currentUserId);
+    }
+
+    @DeleteMapping("/api/messages")
+    public ResponseEntity<?> deleteConversation(
+            @RequestParam("participantId") String participantId, HttpServletRequest request) {
+        return chatService.deleteConversation(request, participantId);
     }
 
     /**

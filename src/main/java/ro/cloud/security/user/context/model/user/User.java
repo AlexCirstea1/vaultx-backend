@@ -40,14 +40,20 @@ public class User implements UserDetails {
     @Column(name = "pin")
     private String pin;
 
+    @Column(name = "strike_count")
+    private int strikeCount;
+
     @Column(name = "created_at")
     private Instant createdAt;
 
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    @Column(name = "last_access_at")
-    private Instant lastAccessAt;
+    @Column(name = "last_seen")
+    private Instant lastSeen;
+
+    @Column(name = "is_online")
+    private boolean isOnline;
 
     @Column(name = "refresh_token", length = 2048)
     private String refreshToken;
@@ -67,6 +73,21 @@ public class User implements UserDetails {
 
     @Column(name = "profile_image", columnDefinition = "TEXT")
     private String profileImage;
+
+    @Column(name = "is_enabled")
+    @Builder.Default
+    private boolean isEnabled = true;
+
+    @Column(name = "blockchain_consent")
+    @Builder.Default
+    private boolean blockchainConsent = false;
+
+    @ManyToMany
+    @JoinTable(name = "user_block",
+            joinColumns = @JoinColumn(name = "blocker_id"),
+            inverseJoinColumns = @JoinColumn(name = "blocked_id"))
+    private Set<User> blockedUsers = new HashSet<>();
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -100,6 +121,6 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return isEnabled;
     }
 }

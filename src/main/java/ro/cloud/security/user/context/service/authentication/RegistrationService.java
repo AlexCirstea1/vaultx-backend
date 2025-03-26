@@ -100,7 +100,7 @@ public class RegistrationService {
         userResponseDTO.setHasPin(user.getPin() != null);
 
         // 8) Log event on blockchain
-        blockchainService.recordDIDEvent(user.getId(), user.getPublicKey(), EventType.REGISTER);
+        blockchainService.recordDIDEvent(user.getId(), user.getPublicKey(), EventType.USER_REGISTERED, userResponseDTO);
 
         return userResponseDTO;
     }

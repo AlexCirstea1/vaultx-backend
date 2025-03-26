@@ -50,7 +50,7 @@ public class LoginService {
                     request.getHeader("User-Agent"),
                     Instant.now());
 
-            user.setLastAccessAt(Instant.now());
+            user.setLastSeen(Instant.now());
             userRepository.save(user);
 
             UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
@@ -68,7 +68,7 @@ public class LoginService {
             String refreshToken = jsonNode.get("refresh_token").asText();
 
             User user = tokenService.validateRefreshToken(refreshToken);
-            user.setLastAccessAt(Instant.now());
+            user.setLastSeen(Instant.now());
             userRepository.save(user);
 
             Authentication auth =

@@ -12,8 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ro.cloud.security.user.context.model.PublicKeyResponse;
+import ro.cloud.security.user.context.model.UserReportRequest;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.user.User;
+import ro.cloud.security.user.context.service.BlockService;
+import ro.cloud.security.user.context.service.ReportService;
 import ro.cloud.security.user.context.service.authentication.UserService;
 
 import java.util.UUID;
@@ -26,6 +29,8 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final ReportService reportService;
+    private final BlockService blockService;
 
     @GetMapping
     @Operation(
@@ -102,4 +107,61 @@ public class UserController {
         var response = userService.saveUserPublicKey(request, publicKey.trim());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/report")
+    @Operation(
+            summary = "Report a user",
+            description = "Report a user for inappropriate behavior",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "User reported successfully"),
+                    @ApiResponse(responseCode = "400", description = "Invalid request data"),
+                    @ApiResponse(responseCode = "404", description = "User not found"),
+                    @ApiResponse(responseCode = "429", description = "Too many reports")
+            })
+    public ResponseEntity<String> reportUser(
+            HttpServletRequest request,
+            @RequestBody UserReportRequest reportRequest) {
+
+        if (reportRequest.getUserId() == null || reportRequest.getReason() == null) {
+            return ResponseEntity.badRequest().body("User ID and reason are required");
+        }
+
+        return reportService.reportUser(request, reportRequest.getUserId(), reportRequest.getReason());
+    }
+
+    @PostMapping("/block/{blockedId}")
+    public ResponseEntity<String> blockUser(@PathVariable UUID blockedId, HttpServletRequest request) {
+        UUID blockerId = userService.getSessionUser(request).getId();
+        blockService.blockUser(blockerId, blockedId);
+        return ResponseEntity.ok("User blocked successfully.");
+    }
+
+    @DeleteMapping("/block/{blockedId}")
+    public ResponseEntity<String> unblockUser(@PathVariable UUID blockedId, HttpServletRequest request) {
+        UUID blockerId = userService.getSessionUser(request).getId();
+        blockService.unblockUser(blockerId, blockedId);
+        return ResponseEntity.ok("User unblocked successfully.");
+    }
+
+    @GetMapping("/block/{blockedId}/status")
+    public ResponseEntity<Boolean> checkIfIBlocked(@PathVariable UUID blockedId, HttpServletRequest request) {
+        UUID blockerId = userService.getSessionUser(request).getId();
+        boolean isBlocked = blockService.isUserBlocked(blockerId, blockedId);
+        return ResponseEntity.ok(isBlocked);
+    }
+
+    @GetMapping("/blockedBy/{blockedId}/status")
+    public ResponseEntity<Boolean> checkIfBlockedMe(@PathVariable UUID blockedId, HttpServletRequest request) {
+        UUID currentUserId = userService.getSessionUser(request).getId();
+        boolean blockedMe = blockService.isUserBlocked(blockedId, currentUserId);
+        return ResponseEntity.ok(blockedMe);
+    }
+
+    @PostMapping("/blockchain-consent")
+    public ResponseEntity<String> updateBlockchainConsent(@RequestParam boolean consent, HttpServletRequest request) {
+        User user = userService.getSessionUser(request);
+        userService.setConsent(consent, user);
+        return ResponseEntity.ok("Consent updated successfully.");
+    }
+
 }

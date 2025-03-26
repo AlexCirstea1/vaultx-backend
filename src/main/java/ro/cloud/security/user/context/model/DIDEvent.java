@@ -12,4 +12,5 @@ public class DIDEvent {
     private String publicDid;
     private EventType eventType;
     private Instant timestamp;
+    private String payload;
 }

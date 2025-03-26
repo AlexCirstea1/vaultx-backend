@@ -2,6 +2,7 @@ package ro.cloud.security.user.context.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.server.ResponseStatusException;
 import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.ReadReceiptNotification;
@@ -35,6 +37,7 @@ public class ChatService {
     private final ObjectMapper objectMapper;
     private final UserService userService;
     private final BlockchainService blockchainService;
+    private final BlockService blockService;
 
     /**
      * Send a private message from senderId to chatMessage.getRecipient().
@@ -45,6 +48,12 @@ public class ChatService {
     public void sendPrivateMessage(ChatMessageDTO chatMessageDto, String senderId) {
         UUID senderUuid = UUID.fromString(senderId);
         UUID recipientUuid = UUID.fromString(chatMessageDto.getRecipient());
+
+        if (blockService.isUserBlocked(senderUuid, recipientUuid) ||
+                blockService.isUserBlocked(recipientUuid, senderUuid)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Cannot send message. One user has blocked the other.");
+        }
 
         User senderUser = userService.getUserById(senderUuid);
         User recipientUser = userService.getUserById(recipientUuid);
@@ -289,6 +298,32 @@ public class ChatService {
                     LocalDateTime.now());
             // Send to the sender's user queue
             messagingTemplate.convertAndSendToUser(senderUuid.toString(), "/queue/read-receipts", note);
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<?> deleteConversation(HttpServletRequest request, String participantId) {
+        try {
+            UUID currentUserUuid = userService.getSessionUser(request).getId();
+            UUID participantUuid = UUID.fromString(participantId);
+
+            // Find all messages between the users
+            List<ChatMessage> conversation = chatMessageRepository.findConversation(currentUserUuid, participantUuid);
+
+            if (conversation.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No messages found between these users.");
+            }
+
+            // Delete the messages
+            chatMessageRepository.deleteAll(conversation);
+
+            return ResponseEntity.ok("Conversation deleted successfully.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Invalid user ID format.");
+        } catch (Exception e) {
+            log.error("Error deleting conversation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An error occurred while deleting the conversation.");
         }
     }
 }

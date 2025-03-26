@@ -1,13 +1,12 @@
 package ro.cloud.security.user.context.service;
 
-import java.time.Instant;
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,9 +31,7 @@ public class BlockchainService {
     public void recordDIDEvent(UUID userId, String publicDid, EventType eventType, Object payload) {
         String jsonPayload = payload != null ? serializeToJson(payload) : null;
 
-        DIDEvent event = new DIDEvent(
-                userId, publicDid, eventType, Instant.now(), jsonPayload
-        );
+        DIDEvent event = new DIDEvent(userId, publicDid, eventType, Instant.now(), jsonPayload);
 
         kafkaProducer.sendDIDEvent(event);
     }

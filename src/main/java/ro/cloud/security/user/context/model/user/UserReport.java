@@ -1,18 +1,17 @@
 package ro.cloud.security.user.context.model.user;
 
 import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-import java.util.UUID;
-
 @Entity
-@Table(name = "user_reports", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"reporter_id", "reported_id"})
-})
+@Table(
+        name = "user_reports",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"reporter_id", "reported_id"})})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -37,4 +36,3 @@ public class UserReport {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 }
-

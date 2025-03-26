@@ -1,11 +1,9 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import com.github.javafaker.Faker;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Base64;
@@ -25,7 +23,6 @@ import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.RoleRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.service.BlockchainService;
-import ro.cloud.security.user.context.utils.KeyGeneratorUtility;
 
 @Service
 @RequiredArgsConstructor

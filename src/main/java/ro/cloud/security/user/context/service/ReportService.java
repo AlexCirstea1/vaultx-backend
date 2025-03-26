@@ -1,6 +1,9 @@
 package ro.cloud.security.user.context.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,10 +14,6 @@ import ro.cloud.security.user.context.repository.UserReportRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.service.authentication.UserService;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 @Service
 public class ReportService {
 
@@ -22,7 +21,8 @@ public class ReportService {
     private final UserReportRepository reportRepository;
     private final UserService userService;
 
-    public ReportService(UserRepository userRepository, UserReportRepository reportRepository, UserService userService) {
+    public ReportService(
+            UserRepository userRepository, UserReportRepository reportRepository, UserService userService) {
         this.userRepository = userRepository;
         this.reportRepository = reportRepository;
         this.userService = userService;
@@ -41,9 +41,11 @@ public class ReportService {
         }
 
         // Fetch users
-        User reporter = userRepository.findById(reporterId)
+        User reporter = userRepository
+                .findById(reporterId)
                 .orElseThrow(() -> new UsernameNotFoundException("Reporter not found"));
-        User reported = userRepository.findById(reportedId)
+        User reported = userRepository
+                .findById(reportedId)
                 .orElseThrow(() -> new UsernameNotFoundException("Reported user not found"));
 
         // Create a new report record
@@ -68,4 +70,3 @@ public class ReportService {
         return ResponseEntity.ok("User reported successfully. Strike count: " + reported.getStrikeCount());
     }
 }
-

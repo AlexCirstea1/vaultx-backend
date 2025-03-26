@@ -14,8 +14,9 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
     /**
      * Returns all messages where the given user is either the sender or the recipient.
      */
-    @Query("""
-    SELECT m FROM ChatMessage m 
+    @Query(
+            """
+    SELECT m FROM ChatMessage m
     WHERE m.timestamp IN (
         SELECT MAX(m2.timestamp) FROM ChatMessage m2
         WHERE m2.sender.id = :userId OR m2.recipient.id = :userId

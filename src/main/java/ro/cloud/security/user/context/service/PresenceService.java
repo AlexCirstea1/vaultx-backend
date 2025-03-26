@@ -1,16 +1,14 @@
 package ro.cloud.security.user.context.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
-
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 @Service
 public class PresenceService {
@@ -45,7 +43,8 @@ public class PresenceService {
     }
 
     private void markUserOnlineById(UUID userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository
+                .findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User with ID " + userId + " not found"));
         user.setOnline(true);
         userRepository.save(user);
@@ -53,7 +52,8 @@ public class PresenceService {
     }
 
     private void markUserOfflineById(UUID userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository
+                .findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("User with ID " + userId + " not found"));
         user.setOnline(false);
         user.setLastSeen(Instant.now());
@@ -62,16 +62,16 @@ public class PresenceService {
     }
 
     private void markUserOnlineByUsername(String username) {
-        User user = userRepository.findUserByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
+        User user =
+                userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
         user.setOnline(true);
         userRepository.save(user);
         messagingTemplate.convertAndSend("/topic/presence", getUserStatus(user));
     }
 
     private void markUserOfflineByUsername(String username) {
-        User user = userRepository.findUserByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException(username));
+        User user =
+                userRepository.findUserByUsername(username).orElseThrow(() -> new UsernameNotFoundException(username));
         user.setOnline(false);
         user.setLastSeen(Instant.now());
         userRepository.save(user);
@@ -82,10 +82,12 @@ public class PresenceService {
         User user;
         try {
             UUID userId = UUID.fromString(userIdentifier);
-            user = userRepository.findById(userId)
+            user = userRepository
+                    .findById(userId)
                     .orElseThrow(() -> new UsernameNotFoundException("User with ID " + userId + " not found"));
         } catch (IllegalArgumentException e) {
-            user = userRepository.findUserByUsername(userIdentifier)
+            user = userRepository
+                    .findUserByUsername(userIdentifier)
                     .orElseThrow(() -> new UsernameNotFoundException(userIdentifier));
         }
         return getUserStatus(user);

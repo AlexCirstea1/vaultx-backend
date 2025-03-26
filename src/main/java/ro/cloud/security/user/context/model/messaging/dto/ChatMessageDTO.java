@@ -2,8 +2,6 @@ package ro.cloud.security.user.context.model.messaging.dto;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,4 +29,3 @@ public class ChatMessageDTO {
     private String clientTempId;
     private String type; // "INCOMING_MESSAGE" or "SENT_MESSAGE"
 }
-

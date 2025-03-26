@@ -95,12 +95,16 @@ public class UserService implements UserDetailsService {
 
     public PublicKeyResponse getUserPublicKey(UUID userId) {
         User user = getUserById(userId);
-        return PublicKeyResponse.builder().publicKey(user.getPublicKey()).version(user.getCurrentKeyVersion()).build();
+        return PublicKeyResponse.builder()
+                .publicKey(user.getPublicKey())
+                .version(user.getCurrentKeyVersion())
+                .build();
     }
 
     public String saveUserPublicKey(HttpServletRequest request, String publicKey) {
         User user = getSessionUser(request);
-        boolean isRotation = (user.getPublicKey() != null && !user.getPublicKey().trim().isEmpty());
+        boolean isRotation =
+                (user.getPublicKey() != null && !user.getPublicKey().trim().isEmpty());
 
         if (isRotation) {
             // Save the old key into history
@@ -126,7 +130,6 @@ public class UserService implements UserDetailsService {
 
         return user.getCurrentKeyVersion();
     }
-
 
     private String generateNextKeyVersion(String currentVersion) {
         // For example, assume versions are "v1", "v2", etc.

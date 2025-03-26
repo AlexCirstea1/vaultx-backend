@@ -1,9 +1,9 @@
 package ro.cloud.security.user.context.model.user;
 
 import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.*;
 
 @Data
 @Entity

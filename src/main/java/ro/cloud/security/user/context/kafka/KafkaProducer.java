@@ -18,7 +18,6 @@ public class KafkaProducer {
     private static final String USER_ROLE_TOPIC = "users.role-change";
     private static final String CHAT_TOPIC = "chats.events";
 
-
     public KafkaProducer(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }

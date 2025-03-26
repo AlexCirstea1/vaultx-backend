@@ -83,11 +83,11 @@ public class User implements UserDetails {
     private boolean blockchainConsent = false;
 
     @ManyToMany
-    @JoinTable(name = "user_block",
+    @JoinTable(
+            name = "user_block",
             joinColumns = @JoinColumn(name = "blocker_id"),
             inverseJoinColumns = @JoinColumn(name = "blocked_id"))
     private Set<User> blockedUsers = new HashSet<>();
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,6 +1,5 @@
 package ro.cloud.security.user.context.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -14,9 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.server.ResponseStatusException;
-import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.ReadReceiptNotification;
 import ro.cloud.security.user.context.model.messaging.ChatMessage;
@@ -49,10 +46,10 @@ public class ChatService {
         UUID senderUuid = UUID.fromString(senderId);
         UUID recipientUuid = UUID.fromString(chatMessageDto.getRecipient());
 
-        if (blockService.isUserBlocked(senderUuid, recipientUuid) ||
-                blockService.isUserBlocked(recipientUuid, senderUuid)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Cannot send message. One user has blocked the other.");
+        if (blockService.isUserBlocked(senderUuid, recipientUuid)
+                || blockService.isUserBlocked(recipientUuid, senderUuid)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Cannot send message. One user has blocked the other.");
         }
 
         User senderUser = userService.getUserById(senderUuid);
@@ -104,17 +101,12 @@ public class ChatService {
 
         // Broadcast
         messagingTemplate.convertAndSendToUser(
-                recipientUuid.toString(),
-                "/queue/messages",
-                toRecipient // type: "INCOMING_MESSAGE"
-        );
+                recipientUuid.toString(), "/queue/messages", toRecipient // type: "INCOMING_MESSAGE"
+                );
 
         messagingTemplate.convertAndSendToUser(
-                senderUuid.toString(),
-                "/queue/sent",
-                toSender // type: "SENT_MESSAGE"
-        );
-
+                senderUuid.toString(), "/queue/sent", toSender // type: "SENT_MESSAGE"
+                );
     }
 
     private ChatMessageDTO cloneMessageDTO(ChatMessageDTO original) {
@@ -199,7 +191,7 @@ public class ChatService {
             chatSummaries.add(ChatHistoryDTO.builder()
                     .participant(participantUuid.toString())
                     .participantUsername(participantUsername)
-                    .messages(List.of(messageDTO))  // Only include the latest message
+                    .messages(List.of(messageDTO)) // Only include the latest message
                     .unreadCount(unreadCount)
                     .build());
         }

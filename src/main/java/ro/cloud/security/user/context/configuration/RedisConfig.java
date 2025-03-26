@@ -28,7 +28,8 @@ public class RedisConfig {
         redisConfig.setHostName(redisProperties.getHost());
         redisConfig.setPort(redisProperties.getPort());
 
-        if (redisProperties.getPassword() != null && !redisProperties.getPassword().isEmpty()) {
+        if (redisProperties.getPassword() != null
+                && !redisProperties.getPassword().isEmpty()) {
             redisConfig.setPassword(redisProperties.getPassword());
         }
 

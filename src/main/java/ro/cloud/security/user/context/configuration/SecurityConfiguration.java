@@ -57,6 +57,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.png", "/*.jpg", "/*.ico")
                             .permitAll();
+                    auth.requestMatchers("/api/user/public/**").permitAll();
                     // Allow Swagger UI and API docs endpoints
                     auth.requestMatchers("/swagger-ui.html").permitAll();
                     auth.requestMatchers("/swagger-ui/**").permitAll();

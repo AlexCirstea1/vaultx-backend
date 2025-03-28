@@ -64,6 +64,13 @@ public class UserService implements UserDetailsService {
         return userDto;
     }
 
+    public UserResponseDTO getUserData(String id) {
+        var user = getUserById(UUID.fromString(id));
+        var userDto = mapper.map(user, UserResponseDTO.class);
+        userDto.setHasPin(user.getPin() != null);
+        return userDto;
+    }
+
     public String deleteUser(HttpServletRequest request) {
         var user = getSessionUser(request);
         userRepository.delete(user);

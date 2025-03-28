@@ -23,8 +23,16 @@ public class Role implements GrantedAuthority {
     @Column(nullable = false)
     private String authority;
 
+    public static Role from(RoleType roleType) {
+        return Role.builder().authority(roleType.getValue()).build();
+    }
+
     @Override
     public String getAuthority() {
         return authority;
+    }
+
+    public RoleType getRoleType() {
+        return RoleType.valueOf(authority);
     }
 }

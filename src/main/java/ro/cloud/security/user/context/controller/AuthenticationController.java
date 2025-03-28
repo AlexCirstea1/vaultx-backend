@@ -95,8 +95,8 @@ public class AuthenticationController {
                         description = "Invalid registration data or user already exists",
                         content = @Content)
             })
-    public ResponseEntity<UserResponseDTO> registerUser(@RequestBody RegistrationDTO dto) {
-        return ResponseEntity.ok(registrationService.registerUser(dto));
+    public ResponseEntity<UserResponseDTO> registerUser(@RequestBody RegistrationDTO dto, HttpServletRequest request) {
+        return ResponseEntity.ok(registrationService.registerUser(request, dto));
     }
 
     @PostMapping("/register/default")

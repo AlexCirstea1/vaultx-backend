@@ -15,4 +15,5 @@ public class UserResponseDTO {
     private String username;
     private String email;
     private boolean hasPin;
+    private boolean blockchainConsent;
 }

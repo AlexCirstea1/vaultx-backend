@@ -6,15 +6,26 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ro.cloud.security.user.context.model.PublicKeyResponse;
 import ro.cloud.security.user.context.model.UserReportRequest;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
+import ro.cloud.security.user.context.model.user.Role;
+import ro.cloud.security.user.context.model.user.RoleType;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.service.BlockService;
 import ro.cloud.security.user.context.service.ReportService;
@@ -58,7 +69,7 @@ public class UserController {
         return ResponseEntity.ok(userService.deleteUser(request));
     }
 
-    @GetMapping("/avatar/{id}")
+    @GetMapping("/public/avatar/{id}")
     @Transactional(readOnly = true)
     @Operation(
             summary = "Get user avatar",
@@ -74,6 +85,11 @@ public class UserController {
         }
         // We can label it as text/plain or application/json
         return ResponseEntity.ok(user.getProfileImage());
+    }
+
+    @GetMapping("/public/{userid}")
+    public ResponseEntity<UserResponseDTO> getUserData(@PathVariable String userid) {
+        return ResponseEntity.ok(userService.getUserData(userid));
     }
 
     @GetMapping("/publicKey/{id}")
@@ -157,5 +173,40 @@ public class UserController {
         User user = userService.getSessionUser(request);
         userService.setConsent(consent, user);
         return ResponseEntity.ok("Consent updated successfully.");
+    }
+
+    @GetMapping("/public/{userId}/roles")
+    @Operation(
+            summary = "Get user roles",
+            description = "Retrieves roles assigned to a specific user by their ID",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Roles retrieved successfully"),
+                    @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+            })
+    public ResponseEntity<List<String>> getUserRoles(@PathVariable UUID userId) {
+        try {
+            User user = userService.getUserById(userId);
+            List<String> roles = user.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+
+            // Define custom order directly - no reassignment
+            final List<String> orderedRoles = List.of(
+                    RoleType.VERIFIED.getValue(),
+                    RoleType.ANONYMOUS.getValue(),
+                    RoleType.ADMIN.getValue(),
+                    RoleType.USER.getValue()
+            );
+
+            // Sort based on the index in the ordered list
+            roles.sort(Comparator.comparing(role -> {
+                int index = orderedRoles.indexOf(role);
+                return index >= 0 ? index : Integer.MAX_VALUE;
+            }));
+
+            return ResponseEntity.ok(roles);
+        } catch (UsernameNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

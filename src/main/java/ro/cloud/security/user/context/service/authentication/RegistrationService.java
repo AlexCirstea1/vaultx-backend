@@ -9,6 +9,8 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
+
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -19,6 +21,7 @@ import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.authentication.response.RegistrationDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.user.Role;
+import ro.cloud.security.user.context.model.user.RoleType;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.RoleRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
@@ -34,7 +37,7 @@ public class RegistrationService {
     private final ModelMapper mapper;
     private final BlockchainService blockchainService;
 
-    public UserResponseDTO registerUser(RegistrationDTO dto) {
+    public UserResponseDTO registerUser(HttpServletRequest request, RegistrationDTO dto) {
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
         if (userRepository.findUserByUsername(dto.getUsername()).isPresent()
@@ -43,7 +46,18 @@ public class RegistrationService {
         }
 
         try {
-            return createUser(dto.getUsername(), dto.getEmail(), encodedPassword);
+            String roleValue = RoleType.VERIFIED.getValue();
+
+            // Check if request is from Postman and set ADMIN role
+            if (request != null) {
+                String userAgent = request.getHeader("User-Agent");
+                if (userAgent != null && userAgent.contains("Postman")) {
+                    log.info("Registration from Postman detected, assigning ADMIN role");
+                    roleValue = RoleType.ADMIN.getValue();
+                }
+            }
+
+            return createUser(dto.getUsername(), dto.getEmail(), encodedPassword, roleValue);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error generating keys", e);
         } catch (IOException e) {
@@ -57,7 +71,8 @@ public class RegistrationService {
             return createUser(
                     generateUsername(),
                     "%s@vaultx.net".formatted(faker.number().digits(8)),
-                    passwordEncoder.encode(password));
+                    passwordEncoder.encode(password),
+                    RoleType.ANONYMOUS.getValue());
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error generating keys", e);
         } catch (IOException e) {
@@ -65,12 +80,17 @@ public class RegistrationService {
         }
     }
 
-    private UserResponseDTO createUser(String username, String email, String encodedPassword)
+    private UserResponseDTO createUser(String username, String email, String encodedPassword, String role)
             throws NoSuchAlgorithmException, IOException {
 
-        var userRole = roleRepository.findByAuthority("USER").orElseThrow();
+        var userDefaultRole = roleRepository.findByAuthority(RoleType.USER.getValue()).orElseThrow(
+                () -> new RuntimeException("Role not found: " + RoleType.USER.getValue()));
+
+        var userRole = roleRepository.findByAuthority(role).orElseThrow(
+                () -> new RuntimeException("Role not found: " + role));
 
         Set<Role> roles = new HashSet<>();
+        roles.add(userDefaultRole);
         roles.add(userRole);
 
         User user = User.builder()

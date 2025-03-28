@@ -6,27 +6,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ro.cloud.security.user.context.model.PublicKeyResponse;
 import ro.cloud.security.user.context.model.UserReportRequest;
+import ro.cloud.security.user.context.model.activity.ActivityResponseDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
-import ro.cloud.security.user.context.model.user.Role;
 import ro.cloud.security.user.context.model.user.RoleType;
 import ro.cloud.security.user.context.model.user.User;
+import ro.cloud.security.user.context.service.ActivityService;
 import ro.cloud.security.user.context.service.BlockService;
 import ro.cloud.security.user.context.service.ReportService;
 import ro.cloud.security.user.context.service.authentication.UserService;
@@ -41,6 +38,7 @@ public class UserController {
     private final UserService userService;
     private final ReportService reportService;
     private final BlockService blockService;
+    private final ActivityService activityService;
 
     @GetMapping
     @Operation(
@@ -180,8 +178,8 @@ public class UserController {
             summary = "Get user roles",
             description = "Retrieves roles assigned to a specific user by their ID",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Roles retrieved successfully"),
-                    @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+                @ApiResponse(responseCode = "200", description = "Roles retrieved successfully"),
+                @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
             })
     public ResponseEntity<List<String>> getUserRoles(@PathVariable UUID userId) {
         try {
@@ -195,8 +193,7 @@ public class UserController {
                     RoleType.VERIFIED.getValue(),
                     RoleType.ANONYMOUS.getValue(),
                     RoleType.ADMIN.getValue(),
-                    RoleType.USER.getValue()
-            );
+                    RoleType.USER.getValue());
 
             // Sort based on the index in the ordered list
             roles.sort(Comparator.comparing(role -> {
@@ -208,5 +205,18 @@ public class UserController {
         } catch (UsernameNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/activities")
+    @Operation(
+            summary = "Get user activities",
+            description = "Retrieves recent activities for the authenticated user",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Activities retrieved successfully"),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<List<ActivityResponseDTO>> getUserActivities(HttpServletRequest request) {
+        User user = userService.getSessionUser(request);
+        return ResponseEntity.ok(activityService.getUserActivities(user));
     }
 }

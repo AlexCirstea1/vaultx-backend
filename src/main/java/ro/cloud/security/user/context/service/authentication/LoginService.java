@@ -15,11 +15,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.authentication.request.LoginDTO;
 import ro.cloud.security.user.context.model.authentication.response.LoginResponseDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
+import ro.cloud.security.user.context.service.ActivityService;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +32,7 @@ public class LoginService {
     private final TokenService tokenService;
     private final ModelMapper mapper;
     private final ObjectMapper objectMapper;
+    private final ActivityService activityService;
 
     public LoginResponseDTO loginUser(HttpServletRequest request, LoginDTO dto) {
         try {
@@ -53,11 +56,29 @@ public class LoginService {
             user.setLastSeen(Instant.now());
             userRepository.save(user);
 
+            // Log successful login activity
+            activityService.logActivity(
+                    user,
+                    ActivityType.LOGIN,
+                    "Successful login",
+                    false,
+                    "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+
             UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
             userResponseDTO.setHasPin(user.getPin() != null);
             return new LoginResponseDTO(userResponseDTO, accessToken, refreshToken);
 
         } catch (AuthenticationException e) {
+            // Log failed login attempt
+            if (userRepository.findUserByUsername(dto.getUsername()).isPresent()) {
+                User user = userRepository.findUserByUsername(dto.getUsername()).get();
+                activityService.logActivity(
+                        user,
+                        ActivityType.LOGIN,
+                        "Failed login attempt",
+                        true,
+                        "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+            }
             throw new BadCredentialsException(e.getMessage());
         }
     }
@@ -98,6 +119,13 @@ public class LoginService {
         user.setRefreshToken(null);
         userRepository.save(user);
         tokenService.removeUserSession(user.getId().toString());
+
+        activityService.logActivity(
+                user,
+                ActivityType.LOGIN,
+                "User logged out",
+                false,
+                "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
     }
 
     public boolean verifyToken(String token) {

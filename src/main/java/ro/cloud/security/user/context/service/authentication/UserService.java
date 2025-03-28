@@ -15,12 +15,14 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.model.PublicKeyResponse;
+import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.model.user.UserKeyHistory;
 import ro.cloud.security.user.context.repository.UserKeyHistoryRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
+import ro.cloud.security.user.context.service.ActivityService;
 
 @Slf4j
 @Service
@@ -32,6 +34,7 @@ public class UserService implements UserDetailsService {
     private final JwtDecoder jwtDecoder;
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserKeyHistoryRepository userKeyHistoryRepository;
+    private final ActivityService activityService;
 
     public User getUserById(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -125,10 +128,21 @@ public class UserService implements UserDetailsService {
             String newVersion = generateNextKeyVersion(user.getCurrentKeyVersion());
             user.setPublicKey(publicKey.trim());
             user.setCurrentKeyVersion(newVersion);
+
+            // Log key rotation activity
+            activityService.logActivity(
+                    user,
+                    ActivityType.KEY,
+                    "Encryption keys rotated",
+                    false,
+                    "From version: " + user.getCurrentKeyVersion() + " to version: " + newVersion);
         } else {
             // First-time registration of the public key
             user.setPublicKey(publicKey.trim());
             user.setCurrentKeyVersion("v1");
+
+            // Log initial key setup
+            activityService.logActivity(user, ActivityType.KEY, "Initial encryption key setup", false, "Version: v1");
         }
         userRepository.save(user);
 
@@ -136,6 +150,20 @@ public class UserService implements UserDetailsService {
         log.info(message);
 
         return user.getCurrentKeyVersion();
+    }
+
+    public void setConsent(boolean consent, User user) {
+        boolean previousConsent = user.isBlockchainConsent();
+        user.setBlockchainConsent(consent);
+        userRepository.save(user);
+
+        // Log consent change
+        activityService.logActivity(
+                user,
+                ActivityType.CONSENT,
+                "Data sharing preferences updated",
+                false,
+                "Blockchain consent changed from " + previousConsent + " to " + consent);
     }
 
     private String generateNextKeyVersion(String currentVersion) {
@@ -150,10 +178,5 @@ public class UserService implements UserDetailsService {
             // fallback to v1 if current version is not parsable
         }
         return "v" + nextVersionNumber;
-    }
-
-    public void setConsent(boolean consent, User user) {
-        user.setBlockchainConsent(consent);
-        userRepository.save(user);
     }
 }

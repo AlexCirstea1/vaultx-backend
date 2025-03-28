@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.model.user.UserReport;
 import ro.cloud.security.user.context.repository.UserReportRepository;
@@ -20,12 +21,17 @@ public class ReportService {
     private final UserRepository userRepository;
     private final UserReportRepository reportRepository;
     private final UserService userService;
+    private final ActivityService activityService;
 
     public ReportService(
-            UserRepository userRepository, UserReportRepository reportRepository, UserService userService) {
+            UserRepository userRepository,
+            UserReportRepository reportRepository,
+            UserService userService,
+            ActivityService activityService) {
         this.userRepository = userRepository;
         this.reportRepository = reportRepository;
         this.userService = userService;
+        this.activityService = activityService;
     }
 
     public ResponseEntity<String> reportUser(HttpServletRequest request, String id, String reason) {
@@ -67,6 +73,14 @@ public class ReportService {
         }
 
         userRepository.save(reported);
+
+        activityService.logActivity(
+                reporter,
+                ActivityType.USER_ACTION,
+                "Reported a user",
+                false,
+                "Reported user ID: " + reportedId + ", Reason: " + reason);
+
         return ResponseEntity.ok("User reported successfully. Strike count: " + reported.getStrikeCount());
     }
 }

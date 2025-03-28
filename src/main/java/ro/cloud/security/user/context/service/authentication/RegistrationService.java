@@ -1,6 +1,7 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import com.github.javafaker.Faker;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -9,8 +10,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
-
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -83,11 +82,12 @@ public class RegistrationService {
     private UserResponseDTO createUser(String username, String email, String encodedPassword, String role)
             throws NoSuchAlgorithmException, IOException {
 
-        var userDefaultRole = roleRepository.findByAuthority(RoleType.USER.getValue()).orElseThrow(
-                () -> new RuntimeException("Role not found: " + RoleType.USER.getValue()));
+        var userDefaultRole = roleRepository
+                .findByAuthority(RoleType.USER.getValue())
+                .orElseThrow(() -> new RuntimeException("Role not found: " + RoleType.USER.getValue()));
 
-        var userRole = roleRepository.findByAuthority(role).orElseThrow(
-                () -> new RuntimeException("Role not found: " + role));
+        var userRole =
+                roleRepository.findByAuthority(role).orElseThrow(() -> new RuntimeException("Role not found: " + role));
 
         Set<Role> roles = new HashSet<>();
         roles.add(userDefaultRole);
@@ -117,7 +117,7 @@ public class RegistrationService {
         userResponseDTO.setHasPin(user.getPin() != null);
 
         // 8) Log event on blockchain
-        blockchainService.recordDIDEvent(user.getId(), user.getPublicKey(), EventType.USER_REGISTERED, userResponseDTO);
+        blockchainService.recordDIDEvent(user, EventType.USER_REGISTERED, userResponseDTO);
 
         return userResponseDTO;
     }

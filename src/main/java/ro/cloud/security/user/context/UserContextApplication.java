@@ -1,11 +1,8 @@
 package ro.cloud.security.user.context;
 
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -16,7 +13,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ro.cloud.security.user.context.model.user.Role;
 import ro.cloud.security.user.context.model.user.RoleType;
-import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.RoleRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 
@@ -51,7 +47,6 @@ public class UserContextApplication implements CommandLineRunner {
         } else {
             log.info("All roles already exist in the database");
         }
-
     }
 
     private void deleteCache() {

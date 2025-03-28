@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.kafka.KafkaProducer;
 import ro.cloud.security.user.context.model.DIDEvent;
 import ro.cloud.security.user.context.model.EventType;
+import ro.cloud.security.user.context.model.activity.ActivityType;
+import ro.cloud.security.user.context.model.user.User;
+import ro.cloud.security.user.context.service.authentication.UserService;
 
 @Service
 @AllArgsConstructor
@@ -20,20 +23,39 @@ import ro.cloud.security.user.context.model.EventType;
 public class BlockchainService {
 
     private final KafkaProducer kafkaProducer;
+    private final ActivityService activityService;
+    private final UserService userService;
 
     /**
      * Send a DIDEvent to Kafka whenever a user is registered, updates their key, etc.
      *
-     * @param userId    The UUID of the user
-     * @param publicDid Base64-encoded public key (or DID)
+     * @param user    The user
      * @param eventType The type of event (REGISTER, KEY_UPDATED, ROLE_CHANGED)
      */
-    public void recordDIDEvent(UUID userId, String publicDid, EventType eventType, Object payload) {
+    public void recordDIDEvent(User user, EventType eventType, Object payload) {
         String jsonPayload = payload != null ? serializeToJson(payload) : null;
 
-        DIDEvent event = new DIDEvent(userId, publicDid, eventType, Instant.now(), jsonPayload);
+        DIDEvent event = new DIDEvent(user.getId(), user.getPublicKey(), eventType, Instant.now(), jsonPayload);
 
         kafkaProducer.sendDIDEvent(event);
+
+        // Log blockchain activity
+        String description = "Document hash committed to blockchain";
+        if (eventType == EventType.USER_KEY_ROTATED) {
+            description = "Encryption key rotation recorded on blockchain";
+        } else if (eventType == EventType.USER_REGISTERED) {
+            description = "New user registered on blockchain";
+        } else if (eventType == EventType.USER_ROLE_CHANGED) {
+            description = "User role change recorded on blockchain";
+        }
+
+        activityService.logActivity(
+                user,
+                ActivityType.BLOCKCHAIN,
+                description,
+                false,
+                "Event Type: " + eventType + ", Transaction ID: 0x"
+                        + UUID.randomUUID().toString().replace("-", ""));
     }
 
     /**

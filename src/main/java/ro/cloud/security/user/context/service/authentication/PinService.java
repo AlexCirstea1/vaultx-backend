@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.exception.CustomBadCredentialsException;
+import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
+import ro.cloud.security.user.context.service.ActivityService;
 import ro.cloud.security.user.context.utils.CipherUtils;
 
 @Service
@@ -16,6 +18,7 @@ import ro.cloud.security.user.context.utils.CipherUtils;
 public class PinService {
     private final UserService userService;
     private final UserRepository userRepository;
+    private final ActivityService activityService;
 
     public void savePin(HttpServletRequest request, String pin) {
         if (pin.length() != 6) {
@@ -27,6 +30,9 @@ public class PinService {
 
         user.setPin(hashedPin);
         userRepository.save(user);
+
+        // Log PIN update activity
+        activityService.logActivity(user, ActivityType.PIN, "PIN code changed", false, null);
     }
 
     public Boolean verifyPin(HttpServletRequest request, String pin) {
@@ -40,6 +46,8 @@ public class PinService {
         if (Objects.equals(hashedPin, user.getPin())) {
             return Boolean.TRUE;
         } else {
+            // Log failed PIN verification
+            activityService.logActivity(user, ActivityType.PIN, "Failed PIN verification attempt", true, null);
             throw new CustomBadCredentialsException("Invalid PIN");
         }
     }

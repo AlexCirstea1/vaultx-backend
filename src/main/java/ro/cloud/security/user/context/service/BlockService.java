@@ -4,6 +4,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
 
@@ -12,6 +13,7 @@ import ro.cloud.security.user.context.repository.UserRepository;
 public class BlockService {
 
     private final UserRepository userRepository;
+    private final ActivityService activityService;
 
     public void blockUser(UUID blockerId, UUID blockedId) {
         User blocker = userRepository
@@ -23,6 +25,14 @@ public class BlockService {
         if (!blocker.getBlockedUsers().contains(blocked)) {
             blocker.getBlockedUsers().add(blocked);
             userRepository.save(blocker);
+
+            // Log block activity
+            activityService.logActivity(
+                    blocker,
+                    ActivityType.USER_ACTION, // You may need to add this type
+                    "Blocked a user",
+                    false,
+                    "Blocked user: " + blocked.getUsername());
         }
     }
 

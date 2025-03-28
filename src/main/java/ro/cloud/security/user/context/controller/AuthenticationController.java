@@ -16,7 +16,10 @@ import ro.cloud.security.user.context.model.authentication.response.LoginRespons
 import ro.cloud.security.user.context.model.authentication.response.RegistrationDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.service.DIDService;
-import ro.cloud.security.user.context.service.authentication.*;
+import ro.cloud.security.user.context.service.authentication.LoginService;
+import ro.cloud.security.user.context.service.authentication.PinService;
+import ro.cloud.security.user.context.service.authentication.RegistrationService;
+import ro.cloud.security.user.context.service.authentication.UserService;
 
 @RestController
 @RequestMapping("/api/auth")

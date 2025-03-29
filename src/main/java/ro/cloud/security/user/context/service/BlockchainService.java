@@ -14,6 +14,7 @@ import ro.cloud.security.user.context.kafka.KafkaProducer;
 import ro.cloud.security.user.context.model.DIDEvent;
 import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.activity.ActivityType;
+import ro.cloud.security.user.context.model.user.RoleType;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.service.authentication.UserService;
 
@@ -24,7 +25,6 @@ public class BlockchainService {
 
     private final KafkaProducer kafkaProducer;
     private final ActivityService activityService;
-    private final UserService userService;
 
     /**
      * Send a DIDEvent to Kafka whenever a user is registered, updates their key, etc.
@@ -33,13 +33,14 @@ public class BlockchainService {
      * @param eventType The type of event (REGISTER, KEY_UPDATED, ROLE_CHANGED)
      */
     public void recordDIDEvent(User user, EventType eventType, Object payload) {
-        String jsonPayload = payload != null ? serializeToJson(payload) : null;
 
+        if (!user.isBlockchainConsent()) return;
+
+        String jsonPayload = payload != null ? serializeToJson(payload) : null;
         DIDEvent event = new DIDEvent(user.getId(), user.getPublicKey(), eventType, Instant.now(), jsonPayload);
 
         kafkaProducer.sendDIDEvent(event);
 
-        // Log blockchain activity
         String description = "Document hash committed to blockchain";
         if (eventType == EventType.USER_KEY_ROTATED) {
             description = "Encryption key rotation recorded on blockchain";

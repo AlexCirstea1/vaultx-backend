@@ -147,7 +147,8 @@ public class ChatController {
     }
 
     @PostMapping("/api/chat-requests")
-    public ResponseEntity<?> sendChatRequest(@RequestBody ChatMessageDTO chatRequestDto, Authentication authentication) {
+    public ResponseEntity<?> sendChatRequest(
+            @RequestBody ChatMessageDTO chatRequestDto, Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String senderId = jwt.getSubject();
         chatService.sendChatRequest(chatRequestDto, senderId);

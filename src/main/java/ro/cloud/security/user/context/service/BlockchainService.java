@@ -14,9 +14,7 @@ import ro.cloud.security.user.context.kafka.KafkaProducer;
 import ro.cloud.security.user.context.model.DIDEvent;
 import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.activity.ActivityType;
-import ro.cloud.security.user.context.model.user.RoleType;
 import ro.cloud.security.user.context.model.user.User;
-import ro.cloud.security.user.context.service.authentication.UserService;
 
 @Service
 @AllArgsConstructor
@@ -41,15 +39,7 @@ public class BlockchainService {
 
         kafkaProducer.sendDIDEvent(event);
 
-        String description = "Document hash committed to blockchain";
-        if (eventType == EventType.USER_KEY_ROTATED) {
-            description = "Encryption key rotation recorded on blockchain";
-        } else if (eventType == EventType.USER_REGISTERED) {
-            description = "New user registered on blockchain";
-        } else if (eventType == EventType.USER_ROLE_CHANGED) {
-            description = "User role change recorded on blockchain";
-        }
-
+        String description = getDescription(eventType);
         activityService.logActivity(
                 user,
                 ActivityType.BLOCKCHAIN,
@@ -57,6 +47,26 @@ public class BlockchainService {
                 false,
                 "Event Type: " + eventType + ", Transaction ID: 0x"
                         + UUID.randomUUID().toString().replace("-", ""));
+    }
+
+    /**
+     * Generates a human-readable description for blockchain events based on the event type.
+     *
+     * @param eventType The type of event (USER_REGISTERED, USER_KEY_ROTATED, USER_ROLE_CHANGED, CHAT_CREATED)
+     * @return A descriptive string representing the blockchain event
+     */
+    private static String getDescription(EventType eventType) {
+        String description = "Document hash committed to blockchain";
+        if (eventType == EventType.USER_KEY_ROTATED) {
+            description = "Encryption key rotation recorded on blockchain";
+        } else if (eventType == EventType.USER_REGISTERED) {
+            description = "New user registered on blockchain";
+        } else if (eventType == EventType.USER_ROLE_CHANGED) {
+            description = "User role change recorded on blockchain";
+        } else if (eventType == EventType.CHAT_CREATED) {
+            description = "New conversation created and recorded on blockchain";
+        }
+        return description;
     }
 
     /**

@@ -3,7 +3,10 @@ package ro.cloud.security.user.context.model.messaging;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import ro.cloud.security.user.context.model.user.User;
 
 @Entity

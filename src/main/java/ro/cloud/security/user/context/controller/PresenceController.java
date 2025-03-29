@@ -3,7 +3,6 @@ package ro.cloud.security.user.context.controller;
 import java.security.Principal;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cloud.security.user.context.service.PresenceService;
 
 @Controller

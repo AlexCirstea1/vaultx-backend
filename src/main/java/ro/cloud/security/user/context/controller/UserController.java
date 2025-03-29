@@ -214,7 +214,8 @@ public class UserController {
                 @ApiResponse(responseCode = "200", description = "Activities retrieved successfully"),
                 @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
             })
-    public ResponseEntity<List<ActivityResponseDTO>> getUserActivities(@RequestParam(required = false, defaultValue = "all") String type, HttpServletRequest request) {
+    public ResponseEntity<List<ActivityResponseDTO>> getUserActivities(
+            @RequestParam(required = false, defaultValue = "all") String type, HttpServletRequest request) {
         User user = userService.getSessionUser(request);
         return ResponseEntity.ok(activityService.getUserActivities(type, user));
     }

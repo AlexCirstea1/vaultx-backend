@@ -1,6 +1,7 @@
 package ro.cloud.security.user.context.service;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -50,5 +51,20 @@ public class ActivityService {
                 .isUnusual(activity.isUnusual())
                 .details(activity.getDetails())
                 .build();
+    }
+
+    /**
+     * Counts activities of a specific type for a user within a recent time period.
+     *
+     * @param userId The user ID to check
+     * @param activityType The type of activity to count
+     * @param isUnusual Whether to count only unusual activities
+     * @param minutesAgo How far back to check (in minutes)
+     * @return Count of matching activities
+     */
+    public int countRecentActivities(UUID userId, ActivityType activityType, boolean isUnusual, int minutesAgo) {
+        Instant cutoffTime = Instant.now().minus(minutesAgo, ChronoUnit.MINUTES);
+        return activityRepository.countByUserIdAndTypeAndUnusualAndTimestampAfter(
+                userId, activityType, isUnusual, cutoffTime);
     }
 }

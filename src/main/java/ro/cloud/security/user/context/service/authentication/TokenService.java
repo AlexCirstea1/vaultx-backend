@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +19,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.authentication.response.LoginResponseDTO;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.model.user.UserSession;
 import ro.cloud.security.user.context.repository.UserRepository;
+import ro.cloud.security.user.context.service.ActivityService;
 import ro.cloud.security.user.context.utils.RSAKeyProperties;
 
 @Service
@@ -36,6 +39,7 @@ public class TokenService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ModelMapper modelMapper;
     private final ObjectMapper objectMapper;
+    private final ActivityService activityService;
 
     @Value("${jwt.ttlInMinutes}")
     private int ttlInMinutes;
@@ -110,6 +114,25 @@ public class TokenService {
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         } catch (JwtException e) {
             log.error("Invalid refresh token: {}", e.getMessage());
+            // Log suspicious activity - extract user info if possible
+            String userId = null;
+            try {
+                // Try to extract subject (user ID) from the expired/invalid token
+                Jwt jwt = jwtDecoder.decode(token);
+                userId = jwt.getSubject();
+                User user = userRepository.findById(UUID.fromString(userId)).orElse(null);
+                if (user != null) {
+                    activityService.logActivity(
+                            user,
+                            ActivityType.SECURITY,
+                            "Suspicious token activity",
+                            true,
+                            "Invalid refresh token used: " + e.getMessage());
+                }
+            } catch (Exception ignored) {
+                // Can't extract user info, just continue
+            }
+
             throw new RuntimeException("Invalid refresh token", e);
         }
     }
@@ -122,6 +145,14 @@ public class TokenService {
 
         // Retrieve existing UserSession from Redis
         UserSession existingSession = getUserSession(user.getId().toString());
+        if (existingSession != null && !clientIp.equals(existingSession.getClientIp())) {
+            activityService.logActivity(
+                    user,
+                    ActivityType.SECURITY,
+                    "Location change detected",
+                    true,
+                    "Previous IP: " + existingSession.getClientIp() + ", New IP: " + clientIp);
+        }
 
         // Retain the existing created_at value if the session exists
         Instant createdAt = (existingSession != null) ? existingSession.getCreatedAt() : Instant.now();

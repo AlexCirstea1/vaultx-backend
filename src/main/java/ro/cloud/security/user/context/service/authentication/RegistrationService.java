@@ -16,7 +16,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ro.cloud.security.user.context.exception.UserAlreadyExistsException;
-import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.authentication.response.RegistrationDTO;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
 import ro.cloud.security.user.context.model.user.Role;

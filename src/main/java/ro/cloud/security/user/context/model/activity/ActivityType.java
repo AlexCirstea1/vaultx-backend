@@ -6,5 +6,6 @@ public enum ActivityType {
     PIN,
     CONSENT,
     BLOCKCHAIN,
-    USER_ACTION
+    USER_ACTION,
+    SECURITY,
 }

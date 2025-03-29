@@ -61,7 +61,9 @@ public class ChatService {
         User recipientUser = userService.getUserById(recipientUuid);
 
         // Check if this is a new conversation
-        boolean isNewConversation = chatMessageRepository.findConversation(senderUuid, recipientUuid).isEmpty();
+        boolean isNewConversation = chatMessageRepository
+                .findConversation(senderUuid, recipientUuid)
+                .isEmpty();
 
         // Build & save entity
         ChatMessage entity = ChatMessage.builder()
@@ -370,8 +372,7 @@ public class ChatService {
         dto.setRecipient(recipientUser.getId().toString());
 
         // Notify the recipient on their chat request queue
-        messagingTemplate.convertAndSendToUser(
-                recipientUuid.toString(), "/queue/chatRequests", dto);
+        messagingTemplate.convertAndSendToUser(recipientUuid.toString(), "/queue/chatRequests", dto);
     }
 
     // -----------------------------
@@ -395,7 +396,8 @@ public class ChatService {
     // -----------------------------
     @Transactional
     public void acceptChatRequest(UUID requestId, String currentUserId) {
-        ChatRequest request = chatRequestRepository.findById(requestId)
+        ChatRequest request = chatRequestRepository
+                .findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat request not found."));
         if (!request.getRecipient().getId().toString().equals(currentUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to accept this chat request.");
@@ -428,8 +430,7 @@ public class ChatService {
 
         messagingTemplate.convertAndSendToUser(
                 request.getRecipient().getId().toString(), "/queue/messages", toRecipient);
-        messagingTemplate.convertAndSendToUser(
-                request.getRequester().getId().toString(), "/queue/sent", toSender);
+        messagingTemplate.convertAndSendToUser(request.getRequester().getId().toString(), "/queue/sent", toSender);
     }
 
     // -----------------------------
@@ -437,7 +438,8 @@ public class ChatService {
     // -----------------------------
     @Transactional
     public void rejectChatRequest(UUID requestId, String currentUserId) {
-        ChatRequest request = chatRequestRepository.findById(requestId)
+        ChatRequest request = chatRequestRepository
+                .findById(requestId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat request not found."));
         if (!request.getRecipient().getId().toString().equals(currentUserId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not authorized to reject this chat request.");

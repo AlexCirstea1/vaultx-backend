@@ -130,7 +130,6 @@ public class User implements UserDetails {
     }
 
     public boolean hasRole(RoleType roleType) {
-        return authorities.stream()
-                .anyMatch(role -> role.getAuthority().equals(roleType.getValue()));
+        return authorities.stream().anyMatch(role -> role.getAuthority().equals(roleType.getValue()));
     }
 }

@@ -69,15 +69,31 @@ public class LoginService {
             return new LoginResponseDTO(userResponseDTO, accessToken, refreshToken);
 
         } catch (AuthenticationException e) {
-            // Log failed login attempt
             if (userRepository.findUserByUsername(dto.getUsername()).isPresent()) {
                 User user = userRepository.findUserByUsername(dto.getUsername()).get();
-                activityService.logActivity(
-                        user,
-                        ActivityType.LOGIN,
-                        "Failed login attempt",
-                        true,
-                        "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+
+                // Check for multiple failures
+                int recentFailures = activityService.countRecentActivities(
+                        user.getId(), ActivityType.LOGIN, true, 30); // Last 30 minutes
+
+                // Log suspicious activity if multiple failures
+                if (recentFailures >= 3) {
+                    activityService.logActivity(
+                            user,
+                            ActivityType.SECURITY,
+                            "Suspicious login activity",
+                            true,
+                            "Multiple failed login attempts (" + (recentFailures + 1) + ") from IP: "
+                                    + request.getRemoteAddr());
+                } else {
+                    // Regular failed login activity (already implemented)
+                    activityService.logActivity(
+                            user,
+                            ActivityType.LOGIN,
+                            "Failed login attempt",
+                            true,
+                            "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+                }
             }
             throw new BadCredentialsException(e.getMessage());
         }
@@ -105,6 +121,13 @@ public class LoginService {
                     request.getRemoteAddr(),
                     request.getHeader("User-Agent"),
                     Instant.now());
+
+            activityService.logActivity(
+                    user,
+                    ActivityType.LOGIN,
+                    "Access token refreshed",
+                    false,
+                    "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
 
             UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
             userResponseDTO.setHasPin(user.getPin() != null);

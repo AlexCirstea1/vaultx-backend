@@ -2,7 +2,10 @@ package ro.cloud.security.user.context.model.messaging.dto;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -10,8 +13,8 @@ import lombok.*;
 @AllArgsConstructor
 public class ChatRequestDTO {
     private UUID id;
-    private String requester;    // requester user ID (as string)
-    private String recipient;    // recipient user ID (as string)
+    private String requester; // requester user ID (as string)
+    private String recipient; // recipient user ID (as string)
     private String ciphertext;
     private String iv;
     private String encryptedKeyForSender;
@@ -19,5 +22,5 @@ public class ChatRequestDTO {
     private String senderKeyVersion;
     private String recipientKeyVersion;
     private LocalDateTime timestamp;
-    private String status;       // "PENDING", etc.
+    private String status; // "PENDING", etc.
 }

@@ -22,6 +22,7 @@ import ro.cloud.security.user.context.model.authentication.response.UserResponse
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.service.ActivityService;
+import ro.cloud.security.user.context.utils.Utils;
 
 @Service
 @RequiredArgsConstructor
@@ -62,7 +63,7 @@ public class LoginService {
                     ActivityType.LOGIN,
                     "Successful login",
                     false,
-                    "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+                    "IP: " + Utils.getClientIpAddress(request) + ", Device: " + request.getHeader("User-Agent"));
 
             UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
             userResponseDTO.setHasPin(user.getPin() != null);
@@ -84,7 +85,7 @@ public class LoginService {
                             "Suspicious login activity",
                             true,
                             "Multiple failed login attempts (" + (recentFailures + 1) + ") from IP: "
-                                    + request.getRemoteAddr());
+                                    + Utils.getClientIpAddress(request));
                 } else {
                     // Regular failed login activity (already implemented)
                     activityService.logActivity(
@@ -92,7 +93,7 @@ public class LoginService {
                             ActivityType.LOGIN,
                             "Failed login attempt",
                             true,
-                            "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+                            "IP: " + Utils.getClientIpAddress(request) + ", Device: " + request.getHeader("User-Agent"));
                 }
             }
             throw new BadCredentialsException(e.getMessage());
@@ -127,7 +128,7 @@ public class LoginService {
                     ActivityType.LOGIN,
                     "Access token refreshed",
                     false,
-                    "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+                    "IP: " + Utils.getClientIpAddress(request) + ", Device: " + request.getHeader("User-Agent"));
 
             UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
             userResponseDTO.setHasPin(user.getPin() != null);
@@ -148,7 +149,7 @@ public class LoginService {
                 ActivityType.LOGIN,
                 "User logged out",
                 false,
-                "IP: " + request.getRemoteAddr() + ", Device: " + request.getHeader("User-Agent"));
+                "IP: " + Utils.getClientIpAddress(request) + ", Device: " + request.getHeader("User-Agent"));
     }
 
     public boolean verifyToken(String token) {

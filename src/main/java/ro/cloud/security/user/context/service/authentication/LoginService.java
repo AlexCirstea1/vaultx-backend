@@ -50,7 +50,7 @@ public class LoginService {
                     user,
                     accessToken,
                     refreshToken,
-                    request.getRemoteAddr(),
+                    Utils.getClientIpAddress(request),
                     request.getHeader("User-Agent"),
                     Instant.now());
 
@@ -119,7 +119,7 @@ public class LoginService {
                     user,
                     newAccessToken,
                     newRefreshToken,
-                    request.getRemoteAddr(),
+                    Utils.getClientIpAddress(request),
                     request.getHeader("User-Agent"),
                     Instant.now());
 

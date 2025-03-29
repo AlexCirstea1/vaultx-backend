@@ -64,7 +64,7 @@ public class ActivityService {
      */
     public int countRecentActivities(UUID userId, ActivityType activityType, boolean isUnusual, int minutesAgo) {
         Instant cutoffTime = Instant.now().minus(minutesAgo, ChronoUnit.MINUTES);
-        return activityRepository.countByUserIdAndTypeAndUnusualAndTimestampAfter(
+        return activityRepository.countByUserIdAndTypeAndIsUnusualAndTimestampAfter(
                 userId, activityType, isUnusual, cutoffTime);
     }
 }

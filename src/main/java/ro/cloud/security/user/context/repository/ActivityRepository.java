@@ -13,6 +13,6 @@ import ro.cloud.security.user.context.model.user.User;
 public interface ActivityRepository extends JpaRepository<Activity, String> {
     List<Activity> findByUserOrderByTimestampDesc(User user);
 
-    int countByUserIdAndTypeAndUnusualAndTimestampAfter(
-            UUID user_id, ActivityType type, boolean unusual, Instant timestamp);
+    int countByUserIdAndTypeAndIsUnusualAndTimestampAfter(
+            UUID userId, ActivityType type, boolean isUnusual, Instant timestamp);
 }

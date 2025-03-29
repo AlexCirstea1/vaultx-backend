@@ -25,7 +25,6 @@ import ro.cloud.security.user.context.service.authentication.UserService;
 @RestController
 @AllArgsConstructor
 @Slf4j
-@CrossOrigin("*")
 @RequestMapping
 public class ChatController {
 

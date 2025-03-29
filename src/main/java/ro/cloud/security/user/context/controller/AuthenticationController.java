@@ -23,7 +23,6 @@ import ro.cloud.security.user.context.service.authentication.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin("*")
 @RequiredArgsConstructor
 @Tag(name = "Authentication", description = "Authentication and authorization endpoints")
 public class AuthenticationController {

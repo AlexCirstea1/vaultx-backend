@@ -30,7 +30,6 @@ import ro.cloud.security.user.context.service.authentication.UserService;
 
 @RestController
 @RequestMapping("/api/user")
-@CrossOrigin("*")
 @AllArgsConstructor
 @Tag(name = "User", description = "User management endpoints")
 public class UserController {

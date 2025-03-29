@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import ro.cloud.security.user.context.service.PresenceService;
 
 @Controller
-@CrossOrigin("*")
 public class PresenceController {
 
     private final PresenceService presenceService;

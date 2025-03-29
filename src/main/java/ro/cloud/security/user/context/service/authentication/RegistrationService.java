@@ -116,9 +116,6 @@ public class RegistrationService {
         UserResponseDTO userResponseDTO = mapper.map(user, UserResponseDTO.class);
         userResponseDTO.setHasPin(user.getPin() != null);
 
-        // 8) Log event on blockchain
-        blockchainService.recordDIDEvent(user, EventType.USER_REGISTERED, userResponseDTO);
-
         return userResponseDTO;
     }
 

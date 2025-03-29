@@ -1,7 +1,11 @@
 package ro.cloud.security.user.context.service.authentication;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -14,6 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
+import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.PublicKeyResponse;
 import ro.cloud.security.user.context.model.activity.ActivityType;
 import ro.cloud.security.user.context.model.authentication.response.UserResponseDTO;
@@ -23,6 +28,7 @@ import ro.cloud.security.user.context.model.user.UserKeyHistory;
 import ro.cloud.security.user.context.repository.UserKeyHistoryRepository;
 import ro.cloud.security.user.context.repository.UserRepository;
 import ro.cloud.security.user.context.service.ActivityService;
+import ro.cloud.security.user.context.service.BlockchainService;
 
 @Slf4j
 @Service
@@ -35,6 +41,8 @@ public class UserService implements UserDetailsService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserKeyHistoryRepository userKeyHistoryRepository;
     private final ActivityService activityService;
+    private final BlockchainService blockchainService;
+    private final ModelMapper modelMapper;
 
     public User getUserById(UUID id) {
         return userRepository.findById(id).orElseThrow(() -> new UsernameNotFoundException("User not found"));
@@ -116,6 +124,8 @@ public class UserService implements UserDetailsService {
         boolean isRotation =
                 (user.getPublicKey() != null && !user.getPublicKey().trim().isEmpty());
 
+        String oldVersion = user.getCurrentKeyVersion(); // Store old version for payload
+
         if (isRotation) {
             // Save the old key into history
             UserKeyHistory keyHistory = new UserKeyHistory();
@@ -135,7 +145,18 @@ public class UserService implements UserDetailsService {
                     ActivityType.KEY,
                     "Encryption keys rotated",
                     false,
-                    "From version: " + user.getCurrentKeyVersion() + " to version: " + newVersion);
+                    "From version: " + oldVersion + " to version: " + newVersion);
+
+            // Record key rotation to blockchain via Kafka
+            Map<String, Object> rotationInfo = new HashMap<>();
+            rotationInfo.put("userId", user.getId().toString());
+            rotationInfo.put("oldVersion", oldVersion);
+            rotationInfo.put("newVersion", user.getCurrentKeyVersion());
+            rotationInfo.put("timestamp", LocalDateTime.now().toString());
+
+            if (user.isBlockchainConsent()) {
+                blockchainService.recordDIDEvent(user, EventType.USER_KEY_ROTATED, rotationInfo);
+            }
         } else {
             // First-time registration of the public key
             user.setPublicKey(publicKey.trim());
@@ -156,6 +177,9 @@ public class UserService implements UserDetailsService {
         boolean previousConsent = user.isBlockchainConsent();
         user.setBlockchainConsent(consent);
         userRepository.save(user);
+
+        // Log event on blockchain
+        blockchainService.recordDIDEvent(user, EventType.USER_REGISTERED, modelMapper.map(user, UserResponseDTO.class));
 
         // Log consent change
         activityService.logActivity(

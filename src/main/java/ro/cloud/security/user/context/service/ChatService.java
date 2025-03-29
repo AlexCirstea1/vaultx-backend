@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.ReadReceiptNotification;
 import ro.cloud.security.user.context.model.messaging.ChatMessage;
@@ -59,8 +60,8 @@ public class ChatService {
         User senderUser = userService.getUserById(senderUuid);
         User recipientUser = userService.getUserById(recipientUuid);
 
-        // Check if new conversation, etc.
-        // (omitted for brevity, see your existing code)
+        // Check if this is a new conversation
+        boolean isNewConversation = chatMessageRepository.findConversation(senderUuid, recipientUuid).isEmpty();
 
         // Build & save entity
         ChatMessage entity = ChatMessage.builder()
@@ -77,6 +78,15 @@ public class ChatService {
                 .isRead(false)
                 .build();
         entity = chatMessageRepository.save(entity);
+
+        if (isNewConversation) {
+            Map<String, Object> chatInfo = new HashMap<>();
+            chatInfo.put("initiator", senderUser.getId().toString());
+            chatInfo.put("recipient", recipientUser.getId().toString());
+            chatInfo.put("startTime", entity.getTimestamp().toString());
+
+            blockchainService.recordDIDEvent(senderUser, EventType.CHAT_CREATED, chatInfo);
+        }
 
         // Convert to base DTO
         ChatMessageDTO baseDto = modelMapper.map(entity, ChatMessageDTO.class);

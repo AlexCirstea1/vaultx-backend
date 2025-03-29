@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.MessageResponse;
 import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
-import ro.cloud.security.user.context.model.messaging.dto.ChatMessageDTO;
-import ro.cloud.security.user.context.model.messaging.dto.CreateGroupChatRequest;
-import ro.cloud.security.user.context.model.messaging.dto.GroupChatHistoryDTO;
-import ro.cloud.security.user.context.model.messaging.dto.GroupChatMessageDTO;
+import ro.cloud.security.user.context.model.messaging.dto.*;
 import ro.cloud.security.user.context.service.ChatService;
 import ro.cloud.security.user.context.service.GroupChatService;
 import ro.cloud.security.user.context.service.authentication.UserService;
@@ -147,5 +144,37 @@ public class ChatController {
     public ResponseEntity<GroupChatHistoryDTO> getGroupChatHistory(@PathVariable("groupId") UUID groupId) {
         GroupChatHistoryDTO history = groupChatService.getGroupChatHistory(groupId);
         return ResponseEntity.ok(history);
+    }
+
+    @PostMapping("/api/chat-requests")
+    public ResponseEntity<?> sendChatRequest(@RequestBody ChatMessageDTO chatRequestDto, Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String senderId = jwt.getSubject();
+        chatService.sendChatRequest(chatRequestDto, senderId);
+        return ResponseEntity.ok("Chat request sent.");
+    }
+
+    @GetMapping("/api/chat-requests")
+    public ResponseEntity<?> getChatRequests(Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String currentUserId = jwt.getSubject();
+        List<ChatRequestDTO> requests = chatService.getPendingChatRequests(currentUserId);
+        return ResponseEntity.ok(requests);
+    }
+
+    @PostMapping("/api/chat-requests/{requestId}/accept")
+    public ResponseEntity<?> acceptChatRequest(@PathVariable UUID requestId, Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String currentUserId = jwt.getSubject();
+        chatService.acceptChatRequest(requestId, currentUserId);
+        return ResponseEntity.ok("Chat request accepted.");
+    }
+
+    @PostMapping("/api/chat-requests/{requestId}/reject")
+    public ResponseEntity<?> rejectChatRequest(@PathVariable UUID requestId, Authentication authentication) {
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String currentUserId = jwt.getSubject();
+        chatService.rejectChatRequest(requestId, currentUserId);
+        return ResponseEntity.ok("Chat request rejected.");
     }
 }

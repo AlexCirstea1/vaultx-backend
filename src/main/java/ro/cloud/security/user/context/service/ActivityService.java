@@ -34,9 +34,10 @@ public class ActivityService {
         log.info("Activity logged: {} for user {}", type, user.getId());
     }
 
-    public List<ActivityResponseDTO> getUserActivities(User user) {
+    public List<ActivityResponseDTO> getUserActivities(String type, User user) {
         return activityRepository.findByUserOrderByTimestampDesc(user).stream()
                 .map(this::mapToDto)
+                .filter(activity -> "all".equalsIgnoreCase(type) || type.equalsIgnoreCase(activity.getType()))
                 .collect(Collectors.toList());
     }
 

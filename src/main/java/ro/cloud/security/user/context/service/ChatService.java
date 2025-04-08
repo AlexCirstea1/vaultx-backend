@@ -15,7 +15,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import ro.cloud.security.user.context.model.EventType;
-import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
+import ro.cloud.security.user.context.model.activity.ActivityType;
+import ro.cloud.security.user.context.model.messaging.dto.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.ReadReceiptNotification;
 import ro.cloud.security.user.context.model.messaging.ChatMessage;
 import ro.cloud.security.user.context.model.messaging.ChatRequest;
@@ -40,6 +41,7 @@ public class ChatService {
     private final BlockchainService blockchainService;
     private final BlockService blockService;
     private final ChatRequestRepository chatRequestRepository;
+    private final ActivityService activityService;
 
     /**
      * Send a private message from senderId to chatMessage.getRecipient().
@@ -78,6 +80,7 @@ public class ChatService {
                 .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
                 .timestamp(LocalDateTime.now())
                 .isRead(false)
+                .oneTime(chatMessageDto.isOneTime())
                 .build();
         entity = chatMessageRepository.save(entity);
 
@@ -140,6 +143,7 @@ public class ChatService {
         copy.setRead(original.isRead());
         copy.setReadTimestamp(original.getReadTimestamp());
         copy.setClientTempId(original.getClientTempId());
+        copy.setOneTime(original.isOneTime());
         return copy;
     }
 
@@ -237,7 +241,12 @@ public class ChatService {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No unread messages found.");
         }
 
-        // Mark them read
+        // Identify one-time messages to be deleted after processing
+        List<ChatMessage> oneTimeMessages = unread.stream()
+                .filter(ChatMessage::isOneTime)
+                .toList();
+
+        // Mark all as read
         unread.forEach(m -> {
             m.setRead(true);
             m.setReadTimestamp(LocalDateTime.now());
@@ -246,6 +255,18 @@ public class ChatService {
 
         // Notify the senders
         notifyReadReceipts(currentUserUuid, unread);
+
+        // Delete one-time messages after they've been read
+        if (!oneTimeMessages.isEmpty()) {
+            chatMessageRepository.deleteAll(oneTimeMessages);
+            activityService.logActivity(
+                    userService.getUserById(currentUserUuid),
+                    ActivityType.USER_ACTION,
+                    "Deleted one-time messages after reading",
+                    false,
+                    "Messages deleted: " + oneTimeMessages.size()
+            );
+        }
 
         return ResponseEntity.ok("Messages marked as read.");
     }
@@ -267,9 +288,16 @@ public class ChatService {
             List<ChatMessage> unread = chatMessageRepository.findAllById(messageIds).stream()
                     .filter(m -> m.getRecipient().getId().equals(currentUserUuid) && !m.isRead())
                     .toList();
+
             if (unread.isEmpty()) {
                 return;
             }
+
+            // Identify one-time messages
+            List<ChatMessage> oneTimeMessages = unread.stream()
+                    .filter(ChatMessage::isOneTime)
+                    .toList();
+
             unread.forEach(m -> {
                 m.setRead(true);
                 m.setReadTimestamp(LocalDateTime.now());
@@ -277,6 +305,18 @@ public class ChatService {
             chatMessageRepository.saveAll(unread);
 
             notifyReadReceipts(currentUserUuid, unread);
+
+            // Delete one-time messages after they've been read
+            if (!oneTimeMessages.isEmpty()) {
+                chatMessageRepository.deleteAll(oneTimeMessages);
+                activityService.logActivity(
+                        userService.getUserById(currentUserUuid),
+                        ActivityType.USER_ACTION,
+                        "Deleted one-time messages after reading",
+                        false,
+                        "Messages deleted: " + oneTimeMessages.size()
+                );
+            }
 
         } catch (Exception e) {
             log.error("Error marking messages as read via STOMP", e);

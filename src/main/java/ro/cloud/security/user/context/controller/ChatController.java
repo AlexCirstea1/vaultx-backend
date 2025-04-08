@@ -14,7 +14,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import ro.cloud.security.user.context.model.authentication.request.MarkReadRequest;
+import ro.cloud.security.user.context.model.messaging.dto.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.MessageResponse;
 import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.messaging.dto.*;

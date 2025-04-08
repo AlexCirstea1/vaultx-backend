@@ -1,4 +1,4 @@
-package ro.cloud.security.user.context.model.authentication.request;
+package ro.cloud.security.user.context.model.messaging.dto;
 
 import java.util.List;
 import java.util.UUID;

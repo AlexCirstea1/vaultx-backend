@@ -63,6 +63,10 @@ public class ChatMessage {
     @Builder.Default
     private boolean isRead = false;
 
+    @Column(name = "one_time", nullable = false)
+    @Builder.Default
+    private boolean oneTime = false;
+
     @Column(name = "read_timestamp")
     private LocalDateTime readTimestamp;
 

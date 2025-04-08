@@ -28,4 +28,5 @@ public class ChatMessageDTO {
     private LocalDateTime readTimestamp;
     private String clientTempId;
     private String type; // "INCOMING_MESSAGE" or "SENT_MESSAGE"
+    private boolean oneTime;
 }

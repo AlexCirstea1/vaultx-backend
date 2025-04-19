@@ -16,13 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import ro.cloud.security.user.context.model.EventType;
 import ro.cloud.security.user.context.model.activity.ActivityType;
-import ro.cloud.security.user.context.model.messaging.dto.MarkReadRequest;
 import ro.cloud.security.user.context.model.authentication.response.ReadReceiptNotification;
 import ro.cloud.security.user.context.model.messaging.ChatMessage;
 import ro.cloud.security.user.context.model.messaging.ChatRequest;
 import ro.cloud.security.user.context.model.messaging.dto.ChatHistoryDTO;
 import ro.cloud.security.user.context.model.messaging.dto.ChatMessageDTO;
 import ro.cloud.security.user.context.model.messaging.dto.ChatRequestDTO;
+import ro.cloud.security.user.context.model.messaging.dto.MarkReadRequest;
 import ro.cloud.security.user.context.model.user.User;
 import ro.cloud.security.user.context.repository.ChatMessageRepository;
 import ro.cloud.security.user.context.repository.ChatRequestRepository;
@@ -242,9 +242,8 @@ public class ChatService {
         }
 
         // Identify one-time messages to be deleted after processing
-        List<ChatMessage> oneTimeMessages = unread.stream()
-                .filter(ChatMessage::isOneTime)
-                .toList();
+        List<ChatMessage> oneTimeMessages =
+                unread.stream().filter(ChatMessage::isOneTime).toList();
 
         // Mark all as read
         unread.forEach(m -> {
@@ -264,8 +263,7 @@ public class ChatService {
                     ActivityType.USER_ACTION,
                     "Deleted one-time messages after reading",
                     false,
-                    "Messages deleted: " + oneTimeMessages.size()
-            );
+                    "Messages deleted: " + oneTimeMessages.size());
         }
 
         return ResponseEntity.ok("Messages marked as read.");
@@ -294,9 +292,8 @@ public class ChatService {
             }
 
             // Identify one-time messages
-            List<ChatMessage> oneTimeMessages = unread.stream()
-                    .filter(ChatMessage::isOneTime)
-                    .toList();
+            List<ChatMessage> oneTimeMessages =
+                    unread.stream().filter(ChatMessage::isOneTime).toList();
 
             unread.forEach(m -> {
                 m.setRead(true);
@@ -314,8 +311,7 @@ public class ChatService {
                         ActivityType.USER_ACTION,
                         "Deleted one-time messages after reading",
                         false,
-                        "Messages deleted: " + oneTimeMessages.size()
-                );
+                        "Messages deleted: " + oneTimeMessages.size());
             }
 
         } catch (Exception e) {

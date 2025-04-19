@@ -55,7 +55,7 @@ public class SecurityConfiguration {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.png", "/*.jpg", "/*.ico")
+                    auth.requestMatchers("/", "/index.html", "/*.js", "/*.css", "/*.png", "/*.jpg", "/*.ico", "/favicon.ico")
                             .permitAll();
                     auth.requestMatchers("/api/user/public/**").permitAll();
                     // Allow Swagger UI and API docs endpoints

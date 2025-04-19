@@ -93,7 +93,8 @@ public class LoginService {
                             ActivityType.LOGIN,
                             "Failed login attempt",
                             true,
-                            "IP: " + Utils.getClientIpAddress(request) + ", Device: " + request.getHeader("User-Agent"));
+                            "IP: " + Utils.getClientIpAddress(request) + ", Device: "
+                                    + request.getHeader("User-Agent"));
                 }
             }
             throw new BadCredentialsException(e.getMessage());

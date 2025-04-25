@@ -6,8 +6,10 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import ro.cloud.security.user.context.model.user.UserReport;
 
+@Repository
 public interface UserReportRepository extends JpaRepository<UserReport, UUID> {
 
     @Query(

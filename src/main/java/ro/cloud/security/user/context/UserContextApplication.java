@@ -10,6 +10,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import ro.cloud.security.user.context.model.user.Role;
 import ro.cloud.security.user.context.model.user.RoleType;
@@ -19,6 +20,7 @@ import ro.cloud.security.user.context.repository.UserRepository;
 @SpringBootApplication
 @AllArgsConstructor
 @EnableCaching
+@EnableScheduling
 @Slf4j
 public class UserContextApplication implements CommandLineRunner {
 
@@ -27,8 +29,6 @@ public class UserContextApplication implements CommandLineRunner {
     }
 
     private final RoleRepository roleRepository;
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final RedisTemplate<String, Object> redisTemplate;
 
     @Override

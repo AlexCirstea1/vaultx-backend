@@ -18,6 +18,7 @@ import ro.cloud.security.user.context.model.authentication.response.MessageRespo
 import ro.cloud.security.user.context.model.authentication.response.UserSearchDTO;
 import ro.cloud.security.user.context.model.messaging.dto.*;
 import ro.cloud.security.user.context.model.messaging.dto.MarkReadRequest;
+import ro.cloud.security.user.context.service.ChatRequestService;
 import ro.cloud.security.user.context.service.ChatService;
 import ro.cloud.security.user.context.service.GroupChatService;
 import ro.cloud.security.user.context.service.authentication.UserService;
@@ -29,6 +30,7 @@ import ro.cloud.security.user.context.service.authentication.UserService;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatRequestService chatRequestService;
     private final GroupChatService groupChatService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
@@ -146,36 +148,39 @@ public class ChatController {
         return ResponseEntity.ok(history);
     }
 
+    /* ------------------ Chat‑request endpoints ------------------ */
+
     @PostMapping("/api/chat-requests")
-    public ResponseEntity<?> sendChatRequest(
-            @RequestBody ChatMessageDTO chatRequestDto, Authentication authentication) {
-        Jwt jwt = (Jwt) authentication.getPrincipal();
-        String senderId = jwt.getSubject();
-        chatService.sendChatRequest(chatRequestDto, senderId);
-        return ResponseEntity.ok("Chat request sent.");
+    public ResponseEntity<ChatRequestDTO> sendChatRequest(@RequestBody ChatMessageDTO dto, Authentication auth) {
+        String senderId = ((Jwt) auth.getPrincipal()).getSubject();
+        ChatRequestDTO created = chatRequestService.sendRequest(dto, senderId);
+        return ResponseEntity.ok(created);
     }
 
     @GetMapping("/api/chat-requests")
-    public ResponseEntity<?> getChatRequests(Authentication authentication) {
-        Jwt jwt = (Jwt) authentication.getPrincipal();
-        String currentUserId = jwt.getSubject();
-        List<ChatRequestDTO> requests = chatService.getPendingChatRequests(currentUserId);
-        return ResponseEntity.ok(requests);
+    public ResponseEntity<List<ChatRequestDTO>> getPending(Authentication auth) {
+        String userId = ((Jwt) auth.getPrincipal()).getSubject();
+        return ResponseEntity.ok(chatRequestService.pendingForUser(userId));
     }
 
-    @PostMapping("/api/chat-requests/{requestId}/accept")
-    public ResponseEntity<?> acceptChatRequest(@PathVariable UUID requestId, Authentication authentication) {
-        Jwt jwt = (Jwt) authentication.getPrincipal();
-        String currentUserId = jwt.getSubject();
-        chatService.acceptChatRequest(requestId, currentUserId);
-        return ResponseEntity.ok("Chat request accepted.");
+    @PostMapping("/api/chat-requests/{id}/accept")
+    public ResponseEntity<Void> accept(@PathVariable UUID id, Authentication auth) {
+        String userId = ((Jwt) auth.getPrincipal()).getSubject();
+        chatRequestService.accept(id, userId);
+        return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/api/chat-requests/{requestId}/reject")
-    public ResponseEntity<?> rejectChatRequest(@PathVariable UUID requestId, Authentication authentication) {
-        Jwt jwt = (Jwt) authentication.getPrincipal();
-        String currentUserId = jwt.getSubject();
-        chatService.rejectChatRequest(requestId, currentUserId);
-        return ResponseEntity.ok("Chat request rejected.");
+    @PostMapping("/api/chat-requests/{id}/reject")
+    public ResponseEntity<Void> reject(@PathVariable UUID id, Authentication auth) {
+        String userId = ((Jwt) auth.getPrincipal()).getSubject();
+        chatRequestService.reject(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/api/chat-requests/{id}/cancel")
+    public ResponseEntity<Void> cancel(@PathVariable UUID id, Authentication auth) {
+        String userId = ((Jwt) auth.getPrincipal()).getSubject();
+        chatRequestService.cancel(id, userId);
+        return ResponseEntity.ok().build();
     }
 }

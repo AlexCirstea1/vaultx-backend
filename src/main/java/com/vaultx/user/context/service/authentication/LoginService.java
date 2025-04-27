@@ -2,8 +2,18 @@ package com.vaultx.user.context.service.authentication;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vaultx.user.context.model.activity.ActivityType;
+import com.vaultx.user.context.model.authentication.request.LoginDTO;
+import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
+import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.repository.UserRepository;
+import com.vaultx.user.context.service.user.ActivityService;
+import com.vaultx.user.context.service.user.UserService;
+import com.vaultx.user.context.utils.Utils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,14 +25,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.authentication.request.LoginDTO;
-import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
-import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.repository.UserRepository;
-import com.vaultx.user.context.service.ActivityService;
-import com.vaultx.user.context.utils.Utils;
 
 @Service
 @RequiredArgsConstructor
@@ -75,7 +77,7 @@ public class LoginService {
 
                 // Check for multiple failures
                 int recentFailures = activityService.countRecentActivities(
-                        user.getId(), ActivityType.LOGIN, true, 30); // Last 30 minutes
+                        user.getId(), ActivityType.LOGIN, true, Duration.ofMinutes(30)); // Last 30 minutes
 
                 // Log suspicious activity if multiple failures
                 if (recentFailures >= 3) {

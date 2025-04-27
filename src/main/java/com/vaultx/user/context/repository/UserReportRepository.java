@@ -1,5 +1,6 @@
 package com.vaultx.user.context.repository;
 
+import com.vaultx.user.context.model.user.UserReport;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -7,7 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.vaultx.user.context.model.user.UserReport;
 
 @Repository
 public interface UserReportRepository extends JpaRepository<UserReport, UUID> {

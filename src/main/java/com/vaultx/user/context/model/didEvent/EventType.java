@@ -1,4 +1,4 @@
-package com.vaultx.user.context.model;
+package com.vaultx.user.context.model.didEvent;
 
 public enum EventType {
     USER_REGISTERED,

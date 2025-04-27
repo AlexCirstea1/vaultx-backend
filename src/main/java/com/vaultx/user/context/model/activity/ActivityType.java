@@ -8,4 +8,5 @@ public enum ActivityType {
     BLOCKCHAIN,
     USER_ACTION,
     SECURITY,
+    MESSAGE,
 }

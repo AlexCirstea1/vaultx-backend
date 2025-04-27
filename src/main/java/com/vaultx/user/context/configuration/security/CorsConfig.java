@@ -1,4 +1,4 @@
-package com.vaultx.user.context.configuration;
+package com.vaultx.user.context.configuration.security;
 
 import java.util.List;
 import org.springframework.context.annotation.Bean;

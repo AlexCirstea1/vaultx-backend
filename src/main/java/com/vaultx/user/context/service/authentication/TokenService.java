@@ -1,6 +1,13 @@
 package com.vaultx.user.context.service.authentication;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vaultx.user.context.model.activity.ActivityType;
+import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.model.user.UserSession;
+import com.vaultx.user.context.repository.UserRepository;
+import com.vaultx.user.context.service.user.ActivityService;
+import com.vaultx.user.context.utils.RSAKeyProperties;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Base64;
@@ -19,13 +26,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
-import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.model.user.UserSession;
-import com.vaultx.user.context.repository.UserRepository;
-import com.vaultx.user.context.service.ActivityService;
-import com.vaultx.user.context.utils.RSAKeyProperties;
 
 @Service
 @RequiredArgsConstructor

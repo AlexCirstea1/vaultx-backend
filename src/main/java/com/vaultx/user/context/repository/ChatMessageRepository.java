@@ -1,12 +1,12 @@
 package com.vaultx.user.context.repository;
 
+import com.vaultx.user.context.model.messaging.ChatMessage;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.vaultx.user.context.model.messaging.ChatMessage;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> {
@@ -40,6 +40,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
     """)
     List<ChatMessage> findConversation(@Param("userA") UUID userA, @Param("userB") UUID userB);
 
-    // If you need a 'findAllById' or other standard methods,
-    // you can rely on JpaRepository's built-in methods.
+    int countByRecipientIdAndSenderIdAndReadFalse(UUID userId, UUID otherUserId);
+
+    List<ChatMessage> findByIdInAndRecipientIdAndReadFalse(List<UUID> messageIds, UUID recipientId);
 }

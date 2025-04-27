@@ -1,20 +1,20 @@
-package com.vaultx.user.context.service;
+package com.vaultx.user.context.service.user;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.vaultx.user.context.model.activity.ActivityType;
+import com.vaultx.user.context.model.didEvent.DIDEvent;
+import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.service.kafka.KafkaProducer;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import com.vaultx.user.context.kafka.KafkaProducer;
-import com.vaultx.user.context.model.DIDEvent;
-import com.vaultx.user.context.model.EventType;
-import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.user.User;
 
 @Service
 @AllArgsConstructor

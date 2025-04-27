@@ -1,11 +1,11 @@
 package com.vaultx.user.context.jobs;
 
+import com.vaultx.user.context.repository.ChatRequestRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import com.vaultx.user.context.repository.ChatRequestRepository;
 
 /**
  * Runs every night at 03:15 and marks all PENDING chat‑requests that are older

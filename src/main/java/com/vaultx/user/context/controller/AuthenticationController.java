@@ -1,5 +1,13 @@
 package com.vaultx.user.context.controller;
 
+import com.vaultx.user.context.model.authentication.request.LoginDTO;
+import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
+import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
+import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
+import com.vaultx.user.context.service.authentication.LoginService;
+import com.vaultx.user.context.service.authentication.PinService;
+import com.vaultx.user.context.service.authentication.RegistrationService;
+import com.vaultx.user.context.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,16 +18,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.vaultx.user.context.model.authentication.request.LoginDTO;
-import com.vaultx.user.context.model.authentication.request.SignatureVerificationRequest;
-import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
-import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
-import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
-import com.vaultx.user.context.service.DIDService;
-import com.vaultx.user.context.service.authentication.LoginService;
-import com.vaultx.user.context.service.authentication.PinService;
-import com.vaultx.user.context.service.authentication.RegistrationService;
-import com.vaultx.user.context.service.authentication.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,7 +27,6 @@ public class AuthenticationController {
     private final LoginService loginService;
     private final RegistrationService registrationService;
     private final PinService pinService;
-    private final DIDService didService;
     private final UserService userService;
 
     @GetMapping
@@ -158,30 +155,5 @@ public class AuthenticationController {
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         loginService.logout(request, userService);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/challenge")
-    @Operation(
-            summary = "Generate DID challenge",
-            description = "Generates a random challenge string for signature verification",
-            responses = {@ApiResponse(responseCode = "200", description = "Challenge generated successfully")})
-    public ResponseEntity<String> getChallenge() {
-        return ResponseEntity.ok(didService.generateChallenge());
-    }
-
-    @PostMapping("/verify-signature")
-    @Operation(
-            summary = "Verify DID signature",
-            description = "Verifies a cryptographic signature using the user's public DID key",
-            responses = {
-                @ApiResponse(responseCode = "200", description = "Signature verification result"),
-                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content),
-                @ApiResponse(responseCode = "400", description = "Invalid signature data", content = @Content)
-            })
-    public ResponseEntity<Boolean> verifySignature(
-            HttpServletRequest request, @RequestBody SignatureVerificationRequest body) {
-        var user = userService.getSessionUser(request);
-        boolean isValid = didService.verifyUserSignature(user.getPublicKey(), body.getMessage(), body.getSignature());
-        return ResponseEntity.ok(isValid);
     }
 }

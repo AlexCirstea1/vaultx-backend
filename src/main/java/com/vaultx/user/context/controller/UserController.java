@@ -1,44 +1,29 @@
 package com.vaultx.user.context.controller;
 
+import com.vaultx.user.context.model.PublicKeyResponse;
+import com.vaultx.user.context.model.activity.ActivityResponseDTO;
+import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
+import com.vaultx.user.context.model.user.UserReportRequest;
+import com.vaultx.user.context.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import com.vaultx.user.context.model.PublicKeyResponse;
-import com.vaultx.user.context.model.UserReportRequest;
-import com.vaultx.user.context.model.activity.ActivityResponseDTO;
-import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
-import com.vaultx.user.context.model.user.RoleType;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.service.ActivityService;
-import com.vaultx.user.context.service.BlockService;
-import com.vaultx.user.context.service.ReportService;
-import com.vaultx.user.context.service.authentication.UserService;
 
 @RestController
 @RequestMapping("/api/user")
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Tag(name = "User", description = "User management endpoints")
 public class UserController {
 
     private final UserService userService;
-    private final ReportService reportService;
-    private final BlockService blockService;
-    private final ActivityService activityService;
 
     @GetMapping
     @Operation(
@@ -51,7 +36,7 @@ public class UserController {
                         content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
                 @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
             })
-    public ResponseEntity<UserResponseDTO> getUser(HttpServletRequest request) {
+    public ResponseEntity<UserResponseDTO> getCurrentUser(HttpServletRequest request) {
         return ResponseEntity.ok(userService.getUser(request));
     }
 
@@ -63,12 +48,11 @@ public class UserController {
                 @ApiResponse(responseCode = "200", description = "User deleted successfully"),
                 @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
             })
-    public ResponseEntity<String> deleteUser(HttpServletRequest request) {
+    public ResponseEntity<String> deleteCurrentUser(HttpServletRequest request) {
         return ResponseEntity.ok(userService.deleteUser(request));
     }
 
-    @GetMapping("/public/avatar/{id}")
-    @Transactional(readOnly = true)
+    @GetMapping("/public/avatar/{userId}")
     @Operation(
             summary = "Get user avatar",
             description = "Retrieves a user's avatar as SVG image",
@@ -76,46 +60,54 @@ public class UserController {
                 @ApiResponse(responseCode = "200", description = "Avatar retrieved successfully"),
                 @ApiResponse(responseCode = "404", description = "User or avatar not found", content = @Content)
             })
-    public ResponseEntity<String> getUserAvatar(@PathVariable UUID id) {
-        User user = userService.getUserById(id);
-        if (user.getProfileImage() == null) {
-            return ResponseEntity.notFound().build();
-        }
-        // We can label it as text/plain or application/json
-        return ResponseEntity.ok(user.getProfileImage());
+    public ResponseEntity<String> getUserAvatar(@PathVariable UUID userId) {
+        String avatar = userService.getUserAvatar(userId);
+        return ResponseEntity.ok(avatar);
     }
 
-    @GetMapping("/public/{userid}")
-    public ResponseEntity<UserResponseDTO> getUserData(@PathVariable String userid) {
-        return ResponseEntity.ok(userService.getUserData(userid));
+    @GetMapping("/public/{userId}")
+    @Operation(
+            summary = "Get public user data",
+            description = "Retrieves public information about a user by their ID",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "User data retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
+                @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
+            })
+    public ResponseEntity<UserResponseDTO> getPublicUserData(@PathVariable UUID userId) {
+        return ResponseEntity.ok(userService.getUserData(userId.toString()));
     }
 
-    @GetMapping("/publicKey/{id}")
-    @Transactional(readOnly = true)
+    @GetMapping("/publicKey/{userId}")
     @Operation(
             summary = "Get user public key",
             description = "Retrieves a user's public key by their ID",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Public key retrieved successfully"),
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Public key retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = PublicKeyResponse.class))),
                 @ApiResponse(responseCode = "404", description = "User or public key not found", content = @Content)
             })
-    public ResponseEntity<PublicKeyResponse> getUserPublicKey(@PathVariable UUID id) {
-        try {
-            var response = userService.getUserPublicKey(id);
-
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } catch (Exception e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<PublicKeyResponse> getUserPublicKey(@PathVariable UUID userId) {
+        PublicKeyResponse publicKey = userService.getUserPublicKey(userId);
+        return ResponseEntity.ok(publicKey);
     }
 
     @PostMapping("/publicKey")
+    @Operation(
+            summary = "Save or update user public key",
+            description = "Saves a new public key or rotates an existing key for the authenticated user",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Public key saved successfully"),
+                @ApiResponse(responseCode = "400", description = "Invalid or missing public key", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
     public ResponseEntity<String> saveUserPublicKey(
             HttpServletRequest request, @RequestBody(required = false) String publicKey) {
-        if (publicKey == null || publicKey.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Public key is required.");
-        }
-        var response = userService.saveUserPublicKey(request, publicKey.trim());
+        String response = userService.savePublicKey(request, publicKey);
         return ResponseEntity.ok(response);
     }
 
@@ -130,94 +122,61 @@ public class UserController {
                 @ApiResponse(responseCode = "429", description = "Too many reports")
             })
     public ResponseEntity<String> reportUser(HttpServletRequest request, @RequestBody UserReportRequest reportRequest) {
-
-        if (reportRequest.getUserId() == null || reportRequest.getReason() == null) {
-            return ResponseEntity.badRequest().body("User ID and reason are required");
-        }
-
-        return reportService.reportUser(request, reportRequest.getUserId(), reportRequest.getReason());
+        String response = userService.reportUser(request, reportRequest);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/block/{blockedId}")
-    public ResponseEntity<String> blockUser(@PathVariable UUID blockedId, HttpServletRequest request) {
-        UUID blockerId = userService.getSessionUser(request).getId();
-        blockService.blockUser(blockerId, blockedId);
-        return ResponseEntity.ok("User blocked successfully.");
+    @Operation(summary = "Block a user", description = "Blocks a user by their ID, preventing further interactions")
+    public ResponseEntity<Void> blockUser(HttpServletRequest request, @PathVariable UUID blockedId) {
+        userService.blockUser(blockedId, request);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/block/{blockedId}")
-    public ResponseEntity<String> unblockUser(@PathVariable UUID blockedId, HttpServletRequest request) {
-        UUID blockerId = userService.getSessionUser(request).getId();
-        blockService.unblockUser(blockerId, blockedId);
-        return ResponseEntity.ok("User unblocked successfully.");
+    @Operation(summary = "Unblock a user", description = "Unblocks a previously blocked user by their ID")
+    public ResponseEntity<Void> unblockUser(HttpServletRequest request, @PathVariable UUID blockedId) {
+        userService.unblockUser(blockedId, request);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/block/{blockedId}/status")
-    public ResponseEntity<Boolean> checkIfIBlocked(@PathVariable UUID blockedId, HttpServletRequest request) {
-        UUID blockerId = userService.getSessionUser(request).getId();
-        boolean isBlocked = blockService.isUserBlocked(blockerId, blockedId);
+    @Operation(summary = "Check block status", description = "Checks if the current user has blocked another user")
+    public ResponseEntity<Boolean> isBlocked(HttpServletRequest request, @PathVariable UUID blockedId) {
+        boolean isBlocked = userService.isUserBlocked(blockedId, request);
         return ResponseEntity.ok(isBlocked);
     }
 
     @GetMapping("/blockedBy/{blockedId}/status")
-    public ResponseEntity<Boolean> checkIfBlockedMe(@PathVariable UUID blockedId, HttpServletRequest request) {
-        UUID currentUserId = userService.getSessionUser(request).getId();
-        boolean blockedMe = blockService.isUserBlocked(blockedId, currentUserId);
-        return ResponseEntity.ok(blockedMe);
+    @Operation(
+            summary = "Check if blocked by user",
+            description = "Checks if the current user has been blocked by another user")
+    public ResponseEntity<Boolean> isBlockedBy(HttpServletRequest request, @PathVariable UUID blockedId) {
+        boolean isBlockedBy = userService.isBlockedByUser(blockedId, request);
+        return ResponseEntity.ok(isBlockedBy);
     }
 
     @PostMapping("/blockchain-consent")
-    public ResponseEntity<String> updateBlockchainConsent(@RequestParam boolean consent, HttpServletRequest request) {
-        User user = userService.getSessionUser(request);
-        userService.setConsent(consent, user);
-        return ResponseEntity.ok("Consent updated successfully.");
+    @Operation(
+            summary = "Update blockchain consent",
+            description = "Updates the user's consent for storing data on the blockchain")
+    public ResponseEntity<Void> updateBlockchainConsent(HttpServletRequest request, @RequestParam boolean consent) {
+        userService.updateBlockchainConsent(consent, request);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/public/{userId}/roles")
-    @Operation(
-            summary = "Get user roles",
-            description = "Retrieves roles assigned to a specific user by their ID",
-            responses = {
-                @ApiResponse(responseCode = "200", description = "Roles retrieved successfully"),
-                @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
-            })
+    @Operation(summary = "Get user roles", description = "Retrieves roles assigned to a specific user by their ID")
     public ResponseEntity<List<String>> getUserRoles(@PathVariable UUID userId) {
-        try {
-            User user = userService.getUserById(userId);
-            List<String> roles = user.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
-
-            // Define custom order directly - no reassignment
-            final List<String> orderedRoles = List.of(
-                    RoleType.VERIFIED.getValue(),
-                    RoleType.ANONYMOUS.getValue(),
-                    RoleType.ADMIN.getValue(),
-                    RoleType.USER.getValue());
-
-            // Sort based on the index in the ordered list
-            roles.sort(Comparator.comparing(role -> {
-                int index = orderedRoles.indexOf(role);
-                return index >= 0 ? index : Integer.MAX_VALUE;
-            }));
-
-            return ResponseEntity.ok(roles);
-        } catch (UsernameNotFoundException e) {
-            return ResponseEntity.notFound().build();
-        }
+        List<String> roles = userService.getUserRoles(userId);
+        return ResponseEntity.ok(roles);
     }
 
     @GetMapping("/activities")
-    @Operation(
-            summary = "Get user activities",
-            description = "Retrieves recent activities for the authenticated user",
-            responses = {
-                @ApiResponse(responseCode = "200", description = "Activities retrieved successfully"),
-                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
-            })
+    @Operation(summary = "Get user activities", description = "Retrieves recent activities for the authenticated user")
     public ResponseEntity<List<ActivityResponseDTO>> getUserActivities(
-            @RequestParam(required = false, defaultValue = "all") String type, HttpServletRequest request) {
-        User user = userService.getSessionUser(request);
-        return ResponseEntity.ok(activityService.getUserActivities(type, user));
+            HttpServletRequest request, @RequestParam(defaultValue = "all") String type) {
+        List<ActivityResponseDTO> activities = userService.getUserActivities(type, request);
+        return ResponseEntity.ok(activities);
     }
 }

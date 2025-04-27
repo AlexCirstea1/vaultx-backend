@@ -1,9 +1,9 @@
 package com.vaultx.user.context.controller;
 
+import com.vaultx.user.context.service.user.PresenceService;
 import java.security.Principal;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
-import com.vaultx.user.context.service.PresenceService;
 
 @Controller
 public class PresenceController {

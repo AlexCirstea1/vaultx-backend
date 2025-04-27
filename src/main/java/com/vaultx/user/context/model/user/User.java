@@ -1,6 +1,7 @@
 package com.vaultx.user.context.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.vaultx.user.context.model.activity.Activity;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.Collection;
@@ -13,7 +14,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import com.vaultx.user.context.model.activity.Activity;
 
 @Entity
 @Table(name = "users")

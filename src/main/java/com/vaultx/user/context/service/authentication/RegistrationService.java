@@ -1,6 +1,15 @@
 package com.vaultx.user.context.service.authentication;
 
 import com.github.javafaker.Faker;
+import com.vaultx.user.context.exception.UserAlreadyExistsException;
+import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
+import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
+import com.vaultx.user.context.model.user.Role;
+import com.vaultx.user.context.model.user.RoleType;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.repository.RoleRepository;
+import com.vaultx.user.context.repository.UserRepository;
+import com.vaultx.user.context.service.user.BlockchainService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,15 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.vaultx.user.context.exception.UserAlreadyExistsException;
-import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
-import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
-import com.vaultx.user.context.model.user.Role;
-import com.vaultx.user.context.model.user.RoleType;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.repository.RoleRepository;
-import com.vaultx.user.context.repository.UserRepository;
-import com.vaultx.user.context.service.BlockchainService;
 
 @Service
 @RequiredArgsConstructor

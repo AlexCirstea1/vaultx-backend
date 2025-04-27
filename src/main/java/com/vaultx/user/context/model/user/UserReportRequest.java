@@ -1,4 +1,4 @@
-package com.vaultx.user.context.model;
+package com.vaultx.user.context.model.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

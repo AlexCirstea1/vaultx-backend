@@ -1,16 +1,17 @@
 package com.vaultx.user.context.service.authentication;
 
+import com.vaultx.user.context.exception.CustomBadCredentialsException;
+import com.vaultx.user.context.model.activity.ActivityType;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.repository.UserRepository;
+import com.vaultx.user.context.service.user.ActivityService;
+import com.vaultx.user.context.service.user.UserService;
+import com.vaultx.user.context.utils.CipherUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import com.vaultx.user.context.exception.CustomBadCredentialsException;
-import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.repository.UserRepository;
-import com.vaultx.user.context.service.ActivityService;
-import com.vaultx.user.context.utils.CipherUtils;
 
 @Service
 @RequiredArgsConstructor

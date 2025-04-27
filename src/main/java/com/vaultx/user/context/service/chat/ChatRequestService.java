@@ -1,8 +1,17 @@
-package com.vaultx.user.context.service;
+package com.vaultx.user.context.service.chat;
 
+import com.vaultx.user.context.mapper.ChatMessageMapper;
+import com.vaultx.user.context.mapper.ChatRequestMapper;
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import com.vaultx.user.context.model.messaging.ChatRequest;
 import com.vaultx.user.context.model.messaging.ChatRequestStatus;
+import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
+import com.vaultx.user.context.model.messaging.dto.ChatRequestDTO;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.repository.ChatMessageRepository;
+import com.vaultx.user.context.repository.ChatRequestRepository;
+import com.vaultx.user.context.service.user.BlockService;
+import com.vaultx.user.context.service.user.UserService;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,12 +24,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
-import com.vaultx.user.context.model.messaging.dto.ChatRequestDTO;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.repository.ChatMessageRepository;
-import com.vaultx.user.context.repository.ChatRequestRepository;
-import com.vaultx.user.context.service.authentication.UserService;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,8 @@ public class ChatRequestService {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
     private final BlockService blockService;
+    private final ChatRequestMapper chatRequestMapper;
+    private final ChatMessageMapper chatMessageMapper;
 
     /* ───────────────────────── PUBLIC API ─────────────────────────── */
 
@@ -74,7 +79,7 @@ public class ChatRequestService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "A pending request already exists");
         }
 
-        ChatRequestDTO dto = toDto(entity);
+        ChatRequestDTO dto = chatRequestMapper.toDto(entity);
 
         // 3. Push WS notification to recipient
         messagingTemplate.convertAndSendToUser(recipientId.toString(), "/queue/chatRequests", dto);
@@ -109,8 +114,8 @@ public class ChatRequestService {
                 .build();
         msg = chatMessageRepository.save(msg);
 
-        ChatMessageDTO toRecipient = toMessageDto(msg, "INCOMING_MESSAGE");
-        ChatMessageDTO toSender = toMessageDto(msg, "SENT_MESSAGE");
+        ChatMessageDTO toRecipient = chatMessageMapper.toDtoWithType(msg, "INCOMING_MESSAGE");
+        ChatMessageDTO toSender = chatMessageMapper.toDtoWithType(msg, "SENT_MESSAGE");
 
         messagingTemplate.convertAndSendToUser(
                 request.getRecipient().getId().toString(), "/queue/messages", toRecipient);
@@ -141,7 +146,7 @@ public class ChatRequestService {
     public List<ChatRequestDTO> pendingForUser(String rawUserId) {
         UUID uid = UUID.fromString(rawUserId);
         return chatRequestRepository.findByRecipient_IdAndStatus(uid, ChatRequestStatus.PENDING).stream()
-                .map(this::toDto)
+                .map(chatRequestMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -156,38 +161,5 @@ public class ChatRequestService {
         return chatRequestRepository
                 .findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Chat request not found"));
-    }
-
-    /** Manual mapping avoids ModelMapper’s User → String issue. */
-    private ChatRequestDTO toDto(ChatRequest e) {
-        return ChatRequestDTO.builder()
-                .id(e.getId())
-                .requester(e.getRequester().getId().toString())
-                .recipient(e.getRecipient().getId().toString())
-                .ciphertext(e.getCiphertext())
-                .iv(e.getIv())
-                .encryptedKeyForSender(e.getEncryptedKeyForSender())
-                .encryptedKeyForRecipient(e.getEncryptedKeyForRecipient())
-                .senderKeyVersion(e.getSenderKeyVersion())
-                .recipientKeyVersion(e.getRecipientKeyVersion())
-                .status(e.getStatus().name())
-                .timestamp(e.getCreatedAt()) // ← fixed line
-                .build();
-    }
-
-    private ChatMessageDTO toMessageDto(ChatMessage e, String type) {
-        return ChatMessageDTO.builder()
-                .id(e.getId())
-                .sender(e.getSender().getId().toString())
-                .recipient(e.getRecipient().getId().toString())
-                .ciphertext(e.getCiphertext())
-                .iv(e.getIv())
-                .encryptedKeyForSender(e.getEncryptedKeyForSender())
-                .encryptedKeyForRecipient(e.getEncryptedKeyForRecipient())
-                .senderKeyVersion(e.getSenderKeyVersion())
-                .recipientKeyVersion(e.getRecipientKeyVersion())
-                .timestamp(e.getTimestamp())
-                .type(type)
-                .build();
     }
 }

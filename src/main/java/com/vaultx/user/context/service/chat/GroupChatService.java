@@ -1,5 +1,15 @@
-package com.vaultx.user.context.service;
+package com.vaultx.user.context.service.chat;
 
+import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.messaging.GroupChat;
+import com.vaultx.user.context.model.messaging.GroupChatMessage;
+import com.vaultx.user.context.model.messaging.dto.GroupChatHistoryDTO;
+import com.vaultx.user.context.model.messaging.dto.GroupChatMessageDTO;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.repository.GroupChatMessageRepository;
+import com.vaultx.user.context.repository.GroupChatRepository;
+import com.vaultx.user.context.service.user.BlockchainService;
+import com.vaultx.user.context.service.user.UserService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -11,15 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import com.vaultx.user.context.model.EventType;
-import com.vaultx.user.context.model.messaging.GroupChat;
-import com.vaultx.user.context.model.messaging.GroupChatMessage;
-import com.vaultx.user.context.model.messaging.dto.GroupChatHistoryDTO;
-import com.vaultx.user.context.model.messaging.dto.GroupChatMessageDTO;
-import com.vaultx.user.context.model.user.User;
-import com.vaultx.user.context.repository.GroupChatMessageRepository;
-import com.vaultx.user.context.repository.GroupChatRepository;
-import com.vaultx.user.context.service.authentication.UserService;
 
 @Service
 @AllArgsConstructor

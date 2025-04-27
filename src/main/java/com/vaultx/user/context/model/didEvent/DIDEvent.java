@@ -1,4 +1,4 @@
-package com.vaultx.user.context.model;
+package com.vaultx.user.context.model.didEvent;
 
 import java.time.Instant;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package com.vaultx.user.context.configuration;
+package com.vaultx.user.context.configuration.websocket;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

@@ -1,41 +1,34 @@
 package com.vaultx.user.context.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaultx.user.context.model.messaging.dto.*;
+import com.vaultx.user.context.service.chat.ChatService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import com.vaultx.user.context.model.authentication.response.MessageResponse;
-import com.vaultx.user.context.model.authentication.response.UserSearchDTO;
-import com.vaultx.user.context.service.ChatRequestService;
-import com.vaultx.user.context.service.ChatService;
-import com.vaultx.user.context.service.GroupChatService;
-import com.vaultx.user.context.service.authentication.UserService;
 
 @RestController
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
-@RequestMapping
+@Tag(name = "Chat", description = "Messaging and chat functionality endpoints")
 public class ChatController {
 
     private final ChatService chatService;
-    private final ChatRequestService chatRequestService;
-    private final GroupChatService groupChatService;
-    private final SimpMessagingTemplate messagingTemplate;
-    private final UserService userService;
-    private final ObjectMapper objectMapper;
 
     @MessageMapping("/sendPrivateMessage")
+    @Operation(summary = "Send private message via WebSocket", hidden = true)
     public void sendPrivateMessage(ChatMessageDTO chatMessage, Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String senderId = jwt.getSubject();
@@ -43,8 +36,20 @@ public class ChatController {
     }
 
     @GetMapping("/api/messages")
+    @Operation(
+            summary = "Get conversation messages",
+            description = "Retrieves all messages between the current user and a specified participant",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Messages retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = ChatMessageDTO.class, type = "array"))),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
     public ResponseEntity<List<ChatMessageDTO>> getMessages(
-            @RequestParam("recipientId") String participantId, Authentication authentication) {
+            @Parameter(description = "ID of the conversation participant", required = true) @RequestParam("recipientId")
+                    String participantId,
+            Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
         List<ChatMessageDTO> messages = chatService.getConversation(currentUserId, participantId);
@@ -52,27 +57,47 @@ public class ChatController {
     }
 
     @GetMapping("/api/chats")
+    @Operation(
+            summary = "Get chat summaries",
+            description = "Retrieves a summary of all conversations for the current user",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Chat summaries retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = ChatHistoryDTO.class, type = "array"))),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content),
+                @ApiResponse(
+                        responseCode = "500",
+                        description = "An error occurred while fetching chat summaries",
+                        content = @Content)
+            })
     public ResponseEntity<?> getChatSummaries(Authentication authentication) {
-        try {
-            Jwt jwt = (Jwt) authentication.getPrincipal();
-            String currentUserId = jwt.getSubject();
-            return ResponseEntity.ok(chatService.getChatSummaries(currentUserId));
-        } catch (Exception e) {
-            log.error("Error fetching chat summaries", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred while fetching chat summaries.");
-        }
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String currentUserId = jwt.getSubject();
+        return chatService.getChatSummaries(currentUserId);
     }
 
     @PostMapping("/api/chats/mark-as-read")
+    @Operation(
+            summary = "Mark messages as read",
+            description = "Marks specified messages as read by the current user",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Messages marked as read successfully"),
+                @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+                @ApiResponse(responseCode = "404", description = "No unread messages found", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
     public ResponseEntity<?> markMessagesAsRead(
-            @RequestBody MarkReadRequest markReadRequest, Authentication authentication) {
+            @Parameter(description = "List of message IDs to mark as read", required = true) @RequestBody
+                    MarkReadRequest markReadRequest,
+            Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
         return chatService.markMessagesAsRead(markReadRequest, currentUserId);
     }
 
     @MessageMapping("/markAsRead")
+    @Operation(summary = "Mark messages as read via WebSocket", hidden = true)
     public void markAsReadViaStomp(@RequestBody MarkReadRequest markReadRequest, Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String currentUserId = jwt.getSubject();
@@ -80,106 +105,187 @@ public class ChatController {
     }
 
     @DeleteMapping("/api/messages")
+    @Operation(
+            summary = "Delete conversation",
+            description = "Deletes all messages between the current user and a specified participant",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Conversation deleted successfully"),
+                @ApiResponse(responseCode = "400", description = "Invalid user ID format", content = @Content),
+                @ApiResponse(responseCode = "404", description = "No messages found between users", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content),
+                @ApiResponse(
+                        responseCode = "500",
+                        description = "An error occurred while deleting the conversation",
+                        content = @Content)
+            })
     public ResponseEntity<?> deleteConversation(
-            @RequestParam("participantId") String participantId, HttpServletRequest request) {
+            @Parameter(description = "ID of the conversation participant", required = true)
+                    @RequestParam("participantId")
+                    String participantId,
+            HttpServletRequest request) {
         return chatService.deleteConversation(request, participantId);
     }
 
-    /**
-     * STOMP endpoint for user search, e.g., "/app/userSearch"
-     */
     @MessageMapping("/userSearch")
+    @Operation(summary = "Search for users via WebSocket", hidden = true)
     public void handleUserSearch(String payload, Authentication authentication) {
-        try {
-            JsonNode jsonNode = objectMapper.readTree(payload);
-            String type = jsonNode.get("type").asText();
-            if (!"USER_SEARCH".equals(type)) return;
-
-            String query = jsonNode.get("payload").get("query").asText();
-            if (query == null || query.trim().isEmpty()) return;
-
-            Jwt jwt = (Jwt) authentication.getPrincipal();
-            String currentUserId = jwt.getSubject();
-
-            List<UserSearchDTO> users = userService.searchUsers(query, currentUserId);
-
-            // Return results
-            messagingTemplate.convertAndSendToUser(
-                    currentUserId, "/queue/userSearchResults", new MessageResponse("USER_SEARCH_RESULTS", users));
-        } catch (Exception e) {
-            log.error("Error handling user search: ", e);
-        }
+        Jwt jwt = (Jwt) authentication.getPrincipal();
+        String currentUserId = jwt.getSubject();
+        chatService.handleUserSearch(payload, currentUserId);
     }
 
-    // ---------------------------
-    // Endpoints for Group Chats
-    // ---------------------------
+    // Group Chat Endpoints
 
     @PostMapping("/api/group-chats")
+    @Operation(
+            summary = "Create group chat",
+            description = "Creates a new group chat with specified participants",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Group chat created successfully"),
+                @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
     public ResponseEntity<?> createGroupChat(
-            @RequestBody CreateGroupChatRequest request, Authentication authentication) {
-        // Optionally, you can verify the creator is in the participant list
+            @Parameter(description = "Group chat creation details", required = true) @RequestBody
+                    CreateGroupChatRequest request,
+            Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
         String creatorId = jwt.getSubject();
-        if (!request.getParticipantIds().contains(creatorId)) {
-            request.getParticipantIds().add(creatorId);
-        }
-        var groupChat = groupChatService.createGroupChat(request.getGroupName(), request.getParticipantIds());
-        return ResponseEntity.ok(groupChat);
+        return chatService.createGroupChat(request, creatorId);
     }
 
     @PostMapping("/api/group-chats/{groupId}/messages")
+    @Operation(
+            summary = "Send group message",
+            description = "Sends a message to a group chat",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Group message sent successfully"),
+                @ApiResponse(responseCode = "404", description = "Group not found", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
     public ResponseEntity<?> sendGroupMessage(
-            @PathVariable("groupId") UUID groupId,
-            @RequestBody GroupChatMessageDTO messageDTO,
+            @Parameter(description = "Group chat ID", required = true) @PathVariable("groupId") UUID groupId,
+            @Parameter(description = "Message details", required = true) @RequestBody GroupChatMessageDTO messageDTO,
             Authentication authentication) {
-        // Set group ID and sender from authentication
-        messageDTO.setGroupId(groupId);
         Jwt jwt = (Jwt) authentication.getPrincipal();
+        messageDTO.setGroupId(groupId);
         messageDTO.setSender(jwt.getSubject());
-        groupChatService.sendGroupMessage(messageDTO);
-        return ResponseEntity.ok("Group message sent.");
+        return chatService.sendGroupMessage(messageDTO);
     }
 
     @GetMapping("/api/group-chats/{groupId}/messages")
-    public ResponseEntity<GroupChatHistoryDTO> getGroupChatHistory(@PathVariable("groupId") UUID groupId) {
-        GroupChatHistoryDTO history = groupChatService.getGroupChatHistory(groupId);
-        return ResponseEntity.ok(history);
+    @Operation(
+            summary = "Get group chat history",
+            description = "Retrieves message history for a group chat",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Group chat history retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = GroupChatHistoryDTO.class))),
+                @ApiResponse(responseCode = "404", description = "Group not found", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<GroupChatHistoryDTO> getGroupChatHistory(
+            @Parameter(description = "Group chat ID", required = true) @PathVariable("groupId") UUID groupId) {
+        return chatService.getGroupChatHistory(groupId);
     }
 
-    /* ------------------ Chat‑request endpoints ------------------ */
+    // Chat Request Endpoints
 
     @PostMapping("/api/chat-requests")
-    public ResponseEntity<ChatRequestDTO> sendChatRequest(@RequestBody ChatMessageDTO dto, Authentication auth) {
+    @Operation(
+            summary = "Send chat request",
+            description = "Sends a chat request to another user",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Chat request sent successfully",
+                        content = @Content(schema = @Schema(implementation = ChatRequestDTO.class))),
+                @ApiResponse(
+                        responseCode = "403",
+                        description = "Cannot send request - one user blocked the other",
+                        content = @Content),
+                @ApiResponse(
+                        responseCode = "409",
+                        description = "A pending request already exists",
+                        content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<ChatRequestDTO> sendChatRequest(
+            @Parameter(description = "Chat request details", required = true) @RequestBody ChatMessageDTO dto,
+            Authentication auth) {
         String senderId = ((Jwt) auth.getPrincipal()).getSubject();
-        ChatRequestDTO created = chatRequestService.sendRequest(dto, senderId);
-        return ResponseEntity.ok(created);
+        return chatService.sendChatRequest(dto, senderId);
     }
 
     @GetMapping("/api/chat-requests")
-    public ResponseEntity<List<ChatRequestDTO>> getPending(Authentication auth) {
+    @Operation(
+            summary = "Get pending chat requests",
+            description = "Retrieves all pending chat requests for the current user",
+            responses = {
+                @ApiResponse(
+                        responseCode = "200",
+                        description = "Pending requests retrieved successfully",
+                        content = @Content(schema = @Schema(implementation = ChatRequestDTO.class, type = "array"))),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<List<ChatRequestDTO>> getPendingChatRequests(Authentication auth) {
         String userId = ((Jwt) auth.getPrincipal()).getSubject();
-        return ResponseEntity.ok(chatRequestService.pendingForUser(userId));
+        return chatService.getPendingChatRequests(userId);
     }
 
     @PostMapping("/api/chat-requests/{id}/accept")
-    public ResponseEntity<Void> accept(@PathVariable UUID id, Authentication auth) {
+    @Operation(
+            summary = "Accept chat request",
+            description = "Accepts a pending chat request sent to the current user",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Chat request accepted successfully"),
+                @ApiResponse(responseCode = "404", description = "Chat request not found", content = @Content),
+                @ApiResponse(responseCode = "403", description = "Not authorized for this request", content = @Content),
+                @ApiResponse(responseCode = "409", description = "Request already processed", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<Void> acceptChatRequest(
+            @Parameter(description = "Chat request ID", required = true) @PathVariable UUID id, Authentication auth) {
         String userId = ((Jwt) auth.getPrincipal()).getSubject();
-        chatRequestService.accept(id, userId);
+        chatService.acceptChatRequest(id, userId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/api/chat-requests/{id}/reject")
-    public ResponseEntity<Void> reject(@PathVariable UUID id, Authentication auth) {
+    @Operation(
+            summary = "Reject chat request",
+            description = "Rejects a pending chat request sent to the current user",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Chat request rejected successfully"),
+                @ApiResponse(responseCode = "404", description = "Chat request not found", content = @Content),
+                @ApiResponse(responseCode = "403", description = "Not authorized for this request", content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<Void> rejectChatRequest(
+            @Parameter(description = "Chat request ID", required = true) @PathVariable UUID id, Authentication auth) {
         String userId = ((Jwt) auth.getPrincipal()).getSubject();
-        chatRequestService.reject(id, userId);
+        chatService.rejectChatRequest(id, userId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/api/chat-requests/{id}/cancel")
-    public ResponseEntity<Void> cancel(@PathVariable UUID id, Authentication auth) {
+    @Operation(
+            summary = "Cancel chat request",
+            description = "Cancels a pending chat request sent by the current user",
+            responses = {
+                @ApiResponse(responseCode = "200", description = "Chat request cancelled successfully"),
+                @ApiResponse(responseCode = "404", description = "Chat request not found", content = @Content),
+                @ApiResponse(
+                        responseCode = "403",
+                        description = "Not authorized to cancel this request",
+                        content = @Content),
+                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<Void> cancelChatRequest(
+            @Parameter(description = "Chat request ID", required = true) @PathVariable UUID id, Authentication auth) {
         String userId = ((Jwt) auth.getPrincipal()).getSubject();
-        chatRequestService.cancel(id, userId);
+        chatService.cancelChatRequest(id, userId);
         return ResponseEntity.ok().build();
     }
 }

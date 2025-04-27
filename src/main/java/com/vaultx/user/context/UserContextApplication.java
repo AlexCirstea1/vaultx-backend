@@ -1,5 +1,8 @@
 package com.vaultx.user.context;
 
+import com.vaultx.user.context.model.user.Role;
+import com.vaultx.user.context.model.user.RoleType;
+import com.vaultx.user.context.repository.RoleRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -11,9 +14,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import com.vaultx.user.context.model.user.Role;
-import com.vaultx.user.context.model.user.RoleType;
-import com.vaultx.user.context.repository.RoleRepository;
 
 @SpringBootApplication
 @AllArgsConstructor

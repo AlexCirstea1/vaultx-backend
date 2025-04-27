@@ -1,5 +1,6 @@
 package com.vaultx.user.context.configuration;
 
+import com.vaultx.user.context.service.kafka.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -10,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import com.vaultx.user.context.kafka.JsonSerializer;
 
 @Configuration
 public class KafkaConfig {

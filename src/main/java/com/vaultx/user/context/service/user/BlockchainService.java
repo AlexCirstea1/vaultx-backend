@@ -12,12 +12,15 @@ import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.service.kafka.KafkaProducer;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -27,39 +30,56 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class BlockchainService {
 
+
     private final KafkaProducer kafkaProducer;
     private final ActivityService activityService;
     private final RestTemplate rest;
     private final String baseUrl;
+    private final String username;
+    private final String password;
 
     public BlockchainService(KafkaProducer kafkaProducer, ActivityService activityService, RestTemplate rest,
-                             @Value("${hyperledger.base-url}") String baseUrl) {
+                             @Value("${hyperledger.base-url}") String baseUrl,
+                             @Value("${hyperledger.user}") String username,
+                             @Value("${hyperledger.password}") String password) {
         this.kafkaProducer = kafkaProducer;
         this.activityService = activityService;
-        this.rest    = rest;
+        this.rest = rest;
         this.baseUrl = baseUrl;
+        this.username = username;
+        this.password = password;
+    }
+
+    private HttpHeaders createBasicAuthHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        if (username != null && !username.isEmpty() && password != null) {
+            String auth = username + ":" + password;
+            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+            headers.set("Authorization", "Basic " + encodedAuth);
+        }
+        return headers;
     }
 
     public List<DIDEvent> getEventsByUser(UUID userId) {
-        String url = String.format("%s/api/chaincode/queryEventsByUser?userId=%s",
-                baseUrl, userId);
+        String url = String.format("%s/api/chaincode/queryEventsByUser?userId=%s", baseUrl, userId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
         ResponseEntity<List<DIDEvent>> resp = rest.exchange(
-                url, HttpMethod.GET, null,
+                url, HttpMethod.GET, requestEntity,
                 new ParameterizedTypeReference<>() {});
         return resp.getBody();
     }
 
     public DIDEvent getEvent(UUID eventId) {
-        String url = String.format("%s/api/chaincode/queryEvent?eventId=%s",
-                baseUrl, eventId);
-        return rest.getForObject(url, DIDEvent.class);
+        String url = String.format("%s/api/chaincode/queryEvent?eventId=%s", baseUrl, eventId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
+        return rest.exchange(url, HttpMethod.GET, requestEntity, DIDEvent.class).getBody();
     }
 
     public List<EventHistory> getEventHistory(UUID eventId) {
-        String url = String.format("%s/api/chaincode/queryHistory?eventId=%s",
-                baseUrl, eventId);
+        String url = String.format("%s/api/chaincode/queryHistory?eventId=%s", baseUrl, eventId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
         ResponseEntity<List<EventHistory>> resp = rest.exchange(
-                url, HttpMethod.GET, null,
+                url, HttpMethod.GET, requestEntity,
                 new ParameterizedTypeReference<>() {});
         return resp.getBody();
     }

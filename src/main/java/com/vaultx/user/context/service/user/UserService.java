@@ -6,7 +6,7 @@ import com.vaultx.user.context.model.activity.ActivityResponseDTO;
 import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.model.authentication.response.UserSearchDTO;
-import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.user.RoleType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.model.user.UserReportRequest;

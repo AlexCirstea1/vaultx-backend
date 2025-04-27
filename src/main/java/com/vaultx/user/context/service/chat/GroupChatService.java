@@ -1,6 +1,6 @@
 package com.vaultx.user.context.service.chat;
 
-import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.messaging.GroupChat;
 import com.vaultx.user.context.model.messaging.GroupChatMessage;
 import com.vaultx.user.context.model.messaging.dto.GroupChatHistoryDTO;

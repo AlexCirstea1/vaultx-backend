@@ -1,7 +1,7 @@
 package com.vaultx.user.context.service.kafka;
 
-import com.vaultx.user.context.model.didEvent.DIDEvent;
-import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.blockchain.DIDEvent;
+import com.vaultx.user.context.model.blockchain.EventType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;

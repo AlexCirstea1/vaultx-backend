@@ -2,7 +2,7 @@ package com.vaultx.user.context.service.user;
 
 import com.vaultx.user.context.model.PublicKeyResponse;
 import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.model.user.UserKeyHistory;
 import com.vaultx.user.context.repository.UserKeyHistoryRepository;

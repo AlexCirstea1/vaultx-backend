@@ -6,23 +6,63 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.didEvent.DIDEvent;
-import com.vaultx.user.context.model.didEvent.EventType;
+import com.vaultx.user.context.model.blockchain.DIDEvent;
+import com.vaultx.user.context.model.blockchain.EventHistory;
+import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.service.kafka.KafkaProducer;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Service
-@AllArgsConstructor
 @Slf4j
 public class BlockchainService {
 
     private final KafkaProducer kafkaProducer;
     private final ActivityService activityService;
+    private final RestTemplate rest;
+    private final String baseUrl;
+
+    public BlockchainService(KafkaProducer kafkaProducer, ActivityService activityService, RestTemplate rest,
+                             @Value("${hyperledger.base-url}") String baseUrl) {
+        this.kafkaProducer = kafkaProducer;
+        this.activityService = activityService;
+        this.rest    = rest;
+        this.baseUrl = baseUrl;
+    }
+
+    public List<DIDEvent> getEventsByUser(UUID userId) {
+        String url = String.format("%s/api/chaincode/queryEventsByUser?userId=%s",
+                baseUrl, userId);
+        ResponseEntity<List<DIDEvent>> resp = rest.exchange(
+                url, HttpMethod.GET, null,
+                new ParameterizedTypeReference<>() {});
+        return resp.getBody();
+    }
+
+    public DIDEvent getEvent(UUID eventId) {
+        String url = String.format("%s/api/chaincode/queryEvent?eventId=%s",
+                baseUrl, eventId);
+        return rest.getForObject(url, DIDEvent.class);
+    }
+
+    public List<EventHistory> getEventHistory(UUID eventId) {
+        String url = String.format("%s/api/chaincode/queryHistory?eventId=%s",
+                baseUrl, eventId);
+        ResponseEntity<List<EventHistory>> resp = rest.exchange(
+                url, HttpMethod.GET, null,
+                new ParameterizedTypeReference<>() {});
+        return resp.getBody();
+    }
 
     /**
      * Send a DIDEvent to Kafka whenever a user is registered, updates their key, etc.

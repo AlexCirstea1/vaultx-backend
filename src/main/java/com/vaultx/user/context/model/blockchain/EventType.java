@@ -1,4 +1,4 @@
-package com.vaultx.user.context.model.didEvent;
+package com.vaultx.user.context.model.blockchain;
 
 public enum EventType {
     USER_REGISTERED,

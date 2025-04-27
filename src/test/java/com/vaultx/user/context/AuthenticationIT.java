@@ -7,7 +7,10 @@ import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
 import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
 import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.util.AuthTestUtils;
+import com.vaultx.user.context.util.TestCredentialsGenerator;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.*;
 
@@ -15,12 +18,15 @@ class AuthenticationIT extends BaseIT {
 
     @Test
     void registerThenLoginHappyPath() {
-        // Direct API call approach - test the raw endpoints
-        RegistrationDTO reg = new RegistrationDTO("alice@local", "Alice", "P4ss!");
+        // Generate unique credentials for this test
+        TestCredentialsGenerator.TestCredentials credentials = generateTestCredentials("alice", "Alice");
+
+        RegistrationDTO reg =
+                new RegistrationDTO(credentials.getEmail(), credentials.getUsername(), credentials.getPassword());
         ResponseEntity<UserResponseDTO> regResp = http.postForEntity("/api/auth/register", reg, UserResponseDTO.class);
         assertThat(regResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        LoginDTO login = new LoginDTO("Alice", "P4ss!");
+        LoginDTO login = new LoginDTO(credentials.getUsername(), credentials.getPassword());
         ResponseEntity<LoginResponseDTO> loginResp =
                 http.postForEntity("/api/auth/login", login, LoginResponseDTO.class);
         assertThat(loginResp.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -30,11 +36,15 @@ class AuthenticationIT extends BaseIT {
 
     @Test
     void completeAuthFlowTest() {
-        // Using helper methods approach - cleaner test code
-        UserResponseDTO user = AuthTestUtils.registerUser(http, "user@test.com", "TestUser", "P4ssw0rd!");
+        // Generate unique credentials for this test
+        TestCredentialsGenerator.TestCredentials credentials = generateTestCredentials("flow", "FlowUser");
+
+        UserResponseDTO user = AuthTestUtils.registerUser(
+                http, credentials.getEmail(), credentials.getUsername(), credentials.getPassword());
         Assertions.assertNotNull(user);
 
-        LoginResponseDTO loginResponse = AuthTestUtils.loginUser(http, "TestUser", "P4ssw0rd!");
+        LoginResponseDTO loginResponse =
+                AuthTestUtils.loginUser(http, credentials.getUsername(), credentials.getPassword());
         String accessToken = loginResponse.getAccessToken();
         String refreshToken = loginResponse.getRefreshToken();
         assertThat(accessToken).isNotEmpty();
@@ -52,9 +62,6 @@ class AuthenticationIT extends BaseIT {
 
     @Test
     void invalidTokenVerificationTest() {
-        // Register a user to establish a valid session context
-        AuthTestUtils.registerUser(http, "test1@example.com", "TestUser1", "P4ssw0rd!");
-
         // Test with invalid token
         String invalidToken = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJmYWtlIn0.fake";
         HttpHeaders headers = createAuthHeaders(invalidToken);

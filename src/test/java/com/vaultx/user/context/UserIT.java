@@ -8,6 +8,7 @@ import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
 import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.model.user.UserReportRequest;
 import com.vaultx.user.context.util.AuthTestUtils;
+import com.vaultx.user.context.util.TestCredentialsGenerator;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -25,13 +26,14 @@ class UserIT extends BaseIT {
 
     @BeforeEach
     void setUp() {
-        // Create a unique email and username for each test to avoid conflicts
-        testEmail = "user.test+" + UUID.randomUUID() + "@example.com";
-        testUsername = "TestUser" + System.currentTimeMillis();
+        // Create unique credentials
+        TestCredentialsGenerator.TestCredentials credentials = generateTestCredentials("user.test", "TestUser");
+        testEmail = credentials.getEmail();
+        testUsername = credentials.getUsername();
 
         // Register and login a test user
-        AuthTestUtils.registerUser(http, testEmail, testUsername, "P4ssw0rd!");
-        LoginResponseDTO loginResponse = AuthTestUtils.loginUser(http, testUsername, "P4ssw0rd!");
+        AuthTestUtils.registerUser(http, testEmail, testUsername, credentials.getPassword());
+        LoginResponseDTO loginResponse = AuthTestUtils.loginUser(http, testUsername, credentials.getPassword());
         accessToken = loginResponse.getAccessToken();
 
         // Get a user profile to extract ID
@@ -94,7 +96,7 @@ class UserIT extends BaseIT {
         assertThat(getResponse.getBody().getPublicKey()).isEqualTo(publicKey);
     }
 
-//    @Test
+    //    @Test
     void blockUnblockUserTest() {
         // Create another user
         String blockedEmail = "blocked+" + UUID.randomUUID() + "@example.com";
@@ -104,7 +106,7 @@ class UserIT extends BaseIT {
         UserResponseDTO blockedUser = AuthTestUtils.registerUser(http, blockedEmail, blockedUsername, "P4ssw0rd!");
         LoginResponseDTO blockedLogin = AuthTestUtils.loginUser(http, blockedEmail, "P4ssw0rd!");
 
-        // Get blocked user ID directly from registration response
+        // Get blocked user ID directly from the registration response
         UUID blockedId = blockedUser.getId();
 
         // Verify the blocked user exists
@@ -200,9 +202,9 @@ class UserIT extends BaseIT {
         assertThat(response.getBody().size()).isGreaterThan(0);
     }
 
-    //@Test
+    // @Test
     void reportUserTest() {
-        // Create unique user to report
+        // Create a unique user to report
         String reportedEmail = "reported+" + UUID.randomUUID() + "@example.com";
         String reportedUsername = "ReportedUser" + System.currentTimeMillis();
         AuthTestUtils.registerUser(http, reportedEmail, reportedUsername, "P4ssw0rd!");

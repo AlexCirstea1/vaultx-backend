@@ -20,7 +20,7 @@ class AuthenticationIT extends BaseIT {
         ResponseEntity<UserResponseDTO> regResp = http.postForEntity("/api/auth/register", reg, UserResponseDTO.class);
         assertThat(regResp.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        LoginDTO login = new LoginDTO("alice@local", "P4ss!");
+        LoginDTO login = new LoginDTO("Alice", "P4ss!");
         ResponseEntity<LoginResponseDTO> loginResp =
                 http.postForEntity("/api/auth/login", login, LoginResponseDTO.class);
         assertThat(loginResp.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -34,7 +34,7 @@ class AuthenticationIT extends BaseIT {
         UserResponseDTO user = AuthTestUtils.registerUser(http, "user@test.com", "TestUser", "P4ssw0rd!");
         Assertions.assertNotNull(user);
 
-        LoginResponseDTO loginResponse = AuthTestUtils.loginUser(http, "user@test.com", "P4ssw0rd!");
+        LoginResponseDTO loginResponse = AuthTestUtils.loginUser(http, "TestUser", "P4ssw0rd!");
         String accessToken = loginResponse.getAccessToken();
         String refreshToken = loginResponse.getRefreshToken();
         assertThat(accessToken).isNotEmpty();

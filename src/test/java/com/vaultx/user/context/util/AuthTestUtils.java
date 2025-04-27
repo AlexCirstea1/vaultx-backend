@@ -27,8 +27,8 @@ public class AuthTestUtils {
     /**
      * Login a user and get auth tokens
      */
-    public static LoginResponseDTO loginUser(TestRestTemplate http, String email, String password) {
-        LoginDTO login = new LoginDTO(email, password);
+    public static LoginResponseDTO loginUser(TestRestTemplate http, String username, String password) {
+        LoginDTO login = new LoginDTO(username, password);
         ResponseEntity<LoginResponseDTO> response =
                 http.postForEntity("/api/auth/login", login, LoginResponseDTO.class);
         if (!response.getStatusCode().is2xxSuccessful()) {

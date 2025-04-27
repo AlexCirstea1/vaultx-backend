@@ -8,9 +8,7 @@ import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
 import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.util.AuthTestUtils;
 import com.vaultx.user.context.util.TestCredentialsGenerator;
-import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.*;
 

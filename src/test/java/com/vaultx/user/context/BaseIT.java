@@ -2,14 +2,28 @@ package com.vaultx.user.context;
 
 import com.vaultx.user.context.util.TestCredentialsGenerator;
 import com.vaultx.user.context.util.TestCredentialsGenerator.TestCredentials;
+import java.lang.reflect.Type;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompHeaders;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.web.socket.WebSocketHttpHeaders;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -19,28 +33,75 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class BaseIT {
 
+    @LocalServerPort
+    private int port;
+
+    protected WebSocketStompClient stompClient;
+    protected StompSession stompSession;
+
     static final DockerImageName PG_IMG = DockerImageName.parse("postgres:15-alpine");
     static final DockerImageName KAFKA_IMG = DockerImageName.parse("confluentinc/cp-kafka:7.6.0");
     static final DockerImageName REDIS_IMG = DockerImageName.parse("redis:7-alpine");
 
     public static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(PG_IMG)
-            .withReuse(true)
             .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\s", 2));
 
     public static final ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(KAFKA_IMG)
-            .withReuse(true)
             .withStartupTimeout(Duration.ofMinutes(3))
             .waitingFor(Wait.forListeningPort());
 
-    public static final GenericContainer<?> redis = new GenericContainer<>(REDIS_IMG)
-            .withExposedPorts(6379)
-            .withReuse(true)
-            .waitingFor(Wait.forListeningPort());
+    public static final GenericContainer<?> redis =
+            new GenericContainer<>(REDIS_IMG).withExposedPorts(6379).waitingFor(Wait.forListeningPort());
 
     static {
         postgres.start();
         kafka.start();
         redis.start();
+    }
+
+    protected void setupWebSocketClient() throws ExecutionException, InterruptedException, TimeoutException {
+        String token;
+        if (this instanceof PrivateChatIT) {
+            token = ((PrivateChatIT) this).senderToken;
+        } else if (this instanceof ChatRequestIT) {
+            token = ((ChatRequestIT) this).senderToken;
+        } else {
+            throw new IllegalStateException("No authentication token available for WebSocket connection");
+        }
+
+        StandardWebSocketClient webSocketClient = new StandardWebSocketClient();
+        this.stompClient = new WebSocketStompClient(webSocketClient);
+        this.stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+
+        WebSocketHttpHeaders handshakeHeaders = new WebSocketHttpHeaders();
+        handshakeHeaders.add("Authorization", "Bearer " + token);
+
+        StompHeaders connectHeaders = new StompHeaders();
+        connectHeaders.add("Authorization", "Bearer " + token);
+
+        String wsUrl = "ws://localhost:" + port + "/ws";
+
+        this.stompSession = stompClient
+                .connectAsync(wsUrl, handshakeHeaders, connectHeaders, new StompSessionHandlerAdapter() {})
+                .get(5, TimeUnit.SECONDS);
+    }
+
+    protected <T> CompletableFuture<T> subscribe(String destination, Class<T> responseType) {
+        CompletableFuture<T> completableFuture = new CompletableFuture<>();
+
+        stompSession.subscribe(destination, new StompFrameHandler() {
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return responseType;
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                completableFuture.complete((T) payload);
+            }
+        });
+
+        return completableFuture;
     }
 
     @DynamicPropertySource

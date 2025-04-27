@@ -23,13 +23,13 @@ public class ReportService {
 
     private final UserRepository userRepository;
     private final UserReportRepository reportRepository;
-    private final UserService userService;
     private final ActivityService activityService;
+    private final SessionService sessionService;
 
     @Transactional
     public ResponseEntity<String> reportUser(HttpServletRequest req, String id, String reason) {
 
-        UUID reporterId = userService.getSessionUser(req).getId();
+        UUID reporterId = sessionService.getSessionUser(req).getId();
         UUID reportedId = UUID.fromString(id);
 
         if (alreadyReported(reporterId, reportedId)) {

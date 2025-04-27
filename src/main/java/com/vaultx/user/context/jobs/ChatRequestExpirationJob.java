@@ -24,7 +24,7 @@ public class ChatRequestExpirationJob {
      */
     @Scheduled(cron = "0 15 3 * * *")
     public void expireOldPendingRequests() {
-        LocalDateTime threshold = LocalDateTime.now().minusDays(30);
+        LocalDateTime threshold = LocalDateTime.now().minusDays(2);
         int affected = chatRequestRepository.expireOld(threshold);
         if (affected > 0) {
             log.info("Expired {} chat requests older than {}", affected, threshold);

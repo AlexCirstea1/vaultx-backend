@@ -40,7 +40,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, UUID> 
     """)
     List<ChatMessage> findConversation(@Param("userA") UUID userA, @Param("userB") UUID userB);
 
-    int countByRecipientIdAndSenderIdAndReadFalse(UUID userId, UUID otherUserId);
+    int countByRecipientIdAndSenderIdAndIsReadFalse(UUID userId, UUID otherUserId);
 
-    List<ChatMessage> findByIdInAndRecipientIdAndReadFalse(List<UUID> messageIds, UUID recipientId);
+    List<ChatMessage> findByIdInAndRecipientIdAndIsReadFalse(List<UUID> messageIds, UUID recipientId);
 }

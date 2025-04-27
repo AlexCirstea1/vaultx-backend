@@ -212,7 +212,7 @@ public class PrivateChatService {
     }
 
     private int countUnreadMessages(UUID userId, UUID otherUserId) {
-        return chatMessageRepository.countByRecipientIdAndSenderIdAndReadFalse(userId, otherUserId);
+        return chatMessageRepository.countByRecipientIdAndSenderIdAndIsReadFalse(userId, otherUserId);
     }
 
     private String getParticipantUsername(UUID participantId) {
@@ -226,7 +226,7 @@ public class PrivateChatService {
     }
 
     private List<ChatMessage> findUnreadMessages(List<UUID> messageIds, UUID recipientId) {
-        return chatMessageRepository.findByIdInAndRecipientIdAndReadFalse(messageIds, recipientId);
+        return chatMessageRepository.findByIdInAndRecipientIdAndIsReadFalse(messageIds, recipientId);
     }
 
     private void processReadMessages(List<ChatMessage> messages, UUID currentUserId) {

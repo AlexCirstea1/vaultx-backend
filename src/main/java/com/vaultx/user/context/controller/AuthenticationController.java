@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -141,7 +142,11 @@ public class AuthenticationController {
             })
     public ResponseEntity<LoginResponseDTO> refreshAccessToken(
             HttpServletRequest request, @RequestBody String refreshTokenJson) {
-        return ResponseEntity.ok(loginService.refreshToken(request, refreshTokenJson));
+        try {
+            return ResponseEntity.ok(loginService.refreshToken(request, refreshTokenJson));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
 
     @PostMapping("/logout")

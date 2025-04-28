@@ -23,7 +23,7 @@ public class KafkaProducer {
     }
 
     public void sendDIDEvent(DIDEvent event) {
-        String topic = getTopicForEvent(event.getType());
+        String topic = getTopicForEvent(event.getEventType());
         kafkaTemplate.send(topic, event);
         log.info("Message {} has been successfully sent to topic: {}", event, topic);
     }

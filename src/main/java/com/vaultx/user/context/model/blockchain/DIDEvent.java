@@ -9,7 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class DIDEvent {
     private UUID userId;
-    private String publicDid;
+    private String publicKey;
     private EventType eventType;
     private Instant timestamp;
     private String payload;
@@ -25,7 +25,7 @@ public class DIDEvent {
 
         return String.join(",",
                 userId == null ? "" : userId.toString(),
-                publicDid == null ? "" : publicDid,
+                publicKey == null ? "" : publicKey,
                 eventType == null ? "" : eventType.name(),
                 timestamp == null ? "" : timestamp.toString(),
                 safePayload

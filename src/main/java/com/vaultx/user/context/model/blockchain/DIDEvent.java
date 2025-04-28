@@ -19,7 +19,6 @@ public class DIDEvent {
     private UUID userId;
     private String publicKey;
 
-    @JsonProperty("type")
     private EventType eventType;
     private Instant timestamp;
 
@@ -27,6 +26,15 @@ public class DIDEvent {
     private long kafkaOffset;
     private String payloadHash;
     private String docType;
+
+    public DIDEvent(UUID id, String publicKey, EventType eventType, Instant now, String jsonPayload) {
+        this.userId = id;
+        this.publicKey = publicKey;
+        this.eventType = eventType;
+        this.timestamp = now;
+        this.payload = jsonPayload;
+    }
+
 
     /**
      * Convert this event into a CSV-formatted line.

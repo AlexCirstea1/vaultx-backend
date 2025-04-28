@@ -37,7 +37,7 @@ public class BlockchainController {
             @RequestParam(required = false) Instant to
     ) {
         return bc.getEventsByUser(userId).stream()
-                .filter(ev -> type == null || ev.getEventType().name().equalsIgnoreCase(type))
+                .filter(ev -> type == null || ev.getType().name().equalsIgnoreCase(type))
                 .filter(ev -> {
                     Instant ts = ev.getTimestamp();
                     boolean after = from == null || !ts.isBefore(from);
@@ -58,7 +58,7 @@ public class BlockchainController {
     ) {
         return list(userId, type, null, null).stream()
                 .filter(ev -> ev.getPayload().contains(q)
-                        || ev.getEventType().name().contains(q))
+                        || ev.getType().name().contains(q))
                 .collect(Collectors.toList());
     }
 
@@ -95,7 +95,7 @@ public class BlockchainController {
     public StatsResponse stats(@RequestParam UUID userId) {
         List<DIDEvent> events = bc.getEventsByUser(userId);
         Map<String, Long> counts = events.stream()
-                .collect(Collectors.groupingBy(ev -> ev.getEventType().name(), Collectors.counting()));
+                .collect(Collectors.groupingBy(ev -> ev.getType().name(), Collectors.counting()));
         return new StatsResponse(counts);
     }
 }

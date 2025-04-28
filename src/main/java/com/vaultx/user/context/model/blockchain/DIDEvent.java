@@ -2,7 +2,7 @@ package com.vaultx.user.context.model.blockchain;
 
 import java.time.Instant;
 import java.util.UUID;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,8 +19,7 @@ public class DIDEvent {
     private UUID userId;
     private String publicKey;
 
-    @JsonProperty("type")
-    private EventType eventType;
+    private EventType type;
     private Instant timestamp;
 
     private String payload;
@@ -40,7 +39,7 @@ public class DIDEvent {
         return String.join(",",
                 eventId == null ? "" : eventId.toString(),
                 userId == null ? "" : userId.toString(),
-                eventType == null ? "" : eventType.name(),
+                type == null ? "" : type.name(),
                 payloadHash == null ? "" : payloadHash,
                 String.valueOf(kafkaOffset),
                 timestamp == null ? "" : timestamp.toString(),

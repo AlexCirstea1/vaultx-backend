@@ -2,17 +2,31 @@ package com.vaultx.user.context.model.blockchain;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class DIDEvent {
+    /** chain‑code key */
+    private UUID eventId;
+
     private UUID userId;
     private String publicKey;
+
+    @JsonProperty("type")
     private EventType eventType;
     private Instant timestamp;
+
     private String payload;
+    private long kafkaOffset;
+    private String payloadHash;
+    private String docType;
 
     /**
      * Convert this event into a CSV-formatted line.
@@ -24,9 +38,11 @@ public class DIDEvent {
         safePayload = "\"" + safePayload + "\"";
 
         return String.join(",",
+                eventId == null ? "" : eventId.toString(),
                 userId == null ? "" : userId.toString(),
-                publicKey == null ? "" : publicKey,
                 eventType == null ? "" : eventType.name(),
+                payloadHash == null ? "" : payloadHash,
+                String.valueOf(kafkaOffset),
                 timestamp == null ? "" : timestamp.toString(),
                 safePayload
         );

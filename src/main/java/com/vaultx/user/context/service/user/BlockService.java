@@ -58,6 +58,13 @@ public class BlockService {
 
         userBlockRepository.findByBlockerAndBlocked(blocker, blocked)
                 .ifPresent(userBlockRepository::delete);
+
+        activityService.logActivity(
+                blocker,
+                ActivityType.USER_ACTION,
+                "Unblocked a user",
+                false,
+                "Unblocked user: " + blocked.getUsername());
     }
 
     @Transactional(readOnly = true)

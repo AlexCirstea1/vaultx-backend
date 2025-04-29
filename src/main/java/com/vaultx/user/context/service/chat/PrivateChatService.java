@@ -245,21 +245,22 @@ public class PrivateChatService {
 
         LocalDateTime readTime = LocalDateTime.now();
 
-        // Mark all as read
+        List<ChatMessage> oneTimeMessages = messages.stream()
+                .filter(ChatMessage::isOneTime)
+                .toList();
+
         messages.forEach(m -> {
             m.setRead(true);
             m.setReadTimestamp(readTime);
         });
         chatMessageRepository.saveAll(messages);
 
-        // Group messages by sender for notifications
         Map<UUID, List<UUID>> messagesBySender = new HashMap<>();
         for (ChatMessage msg : messages) {
             UUID senderId = msg.getSender().getId();
             messagesBySender.computeIfAbsent(senderId, k -> new ArrayList<>()).add(msg.getId());
         }
 
-        // Send read receipts to each sender
         messagesBySender.forEach((senderId, msgIds) -> {
             ReadReceiptNotification notification = new ReadReceiptNotification();
             notification.setReaderId(currentUserId.toString());
@@ -268,5 +269,15 @@ public class PrivateChatService {
 
             messagingTemplate.convertAndSendToUser(senderId.toString(), "/queue/read-receipts", notification);
         });
+
+        if (!oneTimeMessages.isEmpty()) {
+            chatMessageRepository.deleteAll(oneTimeMessages);
+            activityService.logActivity(
+                    userService.getUserById(currentUserId),
+                    ActivityType.USER_ACTION,
+                    "Deleted one-time messages after reading",
+                    false,
+                    "Messages deleted: " + oneTimeMessages.size());
+        }
     }
 }

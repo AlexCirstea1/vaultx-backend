@@ -59,6 +59,9 @@ public class ChatRequest {
     @Column(name = "status", nullable = false)
     private ChatRequestStatus status = ChatRequestStatus.PENDING;
 
+    @Column(name = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -71,6 +71,7 @@ public class ChatRequestService {
                 .senderKeyVersion(chatRequestDto.getSenderKeyVersion())
                 .recipientKeyVersion(chatRequestDto.getRecipientKeyVersion())
                 .status(ChatRequestStatus.PENDING)
+                .timestamp(LocalDateTime.now())
                 .build();
 
         try {

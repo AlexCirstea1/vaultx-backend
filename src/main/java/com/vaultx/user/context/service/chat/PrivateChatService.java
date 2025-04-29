@@ -120,7 +120,7 @@ public class PrivateChatService {
         // Fetch messages to mark as read
         List<ChatMessage> unread = findUnreadMessages(messageIds, currentUserUuid);
         if (unread.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No unread messages found.");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No unread messages found.");
         }
 
         // Process messages
@@ -232,8 +232,13 @@ public class PrivateChatService {
     private void processReadMessages(List<ChatMessage> messages, UUID currentUserId) {
         if (messages.isEmpty()) return;
 
+        LocalDateTime readTime = LocalDateTime.now();
+
         // Mark all as read
-        messages.forEach(m -> m.setRead(true));
+        messages.forEach(m -> {
+            m.setRead(true);
+            m.setReadTimestamp(readTime);
+        });
         chatMessageRepository.saveAll(messages);
 
         // Group messages by sender for notifications
@@ -246,6 +251,7 @@ public class PrivateChatService {
         // Send read receipts to each sender
         messagesBySender.forEach((senderId, msgIds) -> {
             ReadReceiptNotification notification = new ReadReceiptNotification();
+            notification.setReaderId(currentUserId.toString());
             notification.setMessageIds(msgIds);
             notification.setReadTimestamp(LocalDateTime.now());
 

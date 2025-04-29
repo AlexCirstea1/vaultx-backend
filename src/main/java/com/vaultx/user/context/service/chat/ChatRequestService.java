@@ -2,6 +2,7 @@ package com.vaultx.user.context.service.chat;
 
 import com.vaultx.user.context.mapper.ChatMessageMapper;
 import com.vaultx.user.context.mapper.ChatRequestMapper;
+import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import com.vaultx.user.context.model.messaging.ChatRequest;
 import com.vaultx.user.context.model.messaging.ChatRequestStatus;
@@ -11,6 +12,7 @@ import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.ChatMessageRepository;
 import com.vaultx.user.context.repository.ChatRequestRepository;
 import com.vaultx.user.context.service.user.BlockService;
+import com.vaultx.user.context.service.user.BlockchainService;
 import com.vaultx.user.context.service.user.UserService;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
@@ -37,6 +39,7 @@ public class ChatRequestService {
     private final BlockService blockService;
     private final ChatRequestMapper chatRequestMapper;
     private final ChatMessageMapper chatMessageMapper;
+    private final BlockchainService blockchainService;
 
     /* ───────────────────────── PUBLIC API ─────────────────────────── */
 
@@ -121,6 +124,8 @@ public class ChatRequestService {
         messagingTemplate.convertAndSendToUser(
                 request.getRecipient().getId().toString(), "/queue/messages", toRecipient);
         messagingTemplate.convertAndSendToUser(request.getRequester().getId().toString(), "/queue/sent", toSender);
+
+        blockchainService.recordDIDEvent(request.getRequester(), EventType.CHAT_CREATED, request.getRecipient());
     }
 
     @Transactional

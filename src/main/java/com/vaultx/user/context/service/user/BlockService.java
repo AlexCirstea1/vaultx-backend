@@ -2,10 +2,10 @@ package com.vaultx.user.context.service.user;
 
 import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.model.user.UserBlock;
+import com.vaultx.user.context.repository.UserBlockRepository;
 import com.vaultx.user.context.repository.UserRepository;
-
-import java.util.HashSet;
-import java.util.Set;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BlockService {
 
     private final UserRepository userRepository;
+    private final UserBlockRepository userBlockRepository;
     private final ActivityService activityService;
 
     @Transactional
@@ -28,38 +29,43 @@ public class BlockService {
         User blocker = findUser(blockerId);
         User blocked = findUser(blockedId);
 
-        // Create a new HashSet with the existing blocked users
-        Set<User> updatedBlockedUsers = new HashSet<>(blocker.getBlockedUsers());
-
-        // Add the new blocked user to this copy
-        boolean added = updatedBlockedUsers.add(blocked);
-
-        if (added) {
-            // Update the reference in the entity
-            blocker.setBlockedUsers(updatedBlockedUsers);
-
-            activityService.logActivity(
-                    blocker,
-                    ActivityType.USER_ACTION,
-                    "Blocked a user",
-                    false,
-                    "Blocked user: " + blocked.getUsername());
-
-            userRepository.save(blocker);
+        // Check if already blocked
+        if (userBlockRepository.existsByBlockerAndBlocked(blocker, blocked)) {
+            return; // Already blocked, nothing to do
         }
+
+        // Create a new block relationship
+        UserBlock userBlock = UserBlock.builder()
+                .blocker(blocker)
+                .blocked(blocked)
+                .createdAt(Instant.now())
+                .build();
+
+        userBlockRepository.save(userBlock);
+
+        activityService.logActivity(
+                blocker,
+                ActivityType.USER_ACTION,
+                "Blocked a user",
+                false,
+                "Blocked user: " + blocked.getUsername());
     }
 
     @Transactional
     public void unblockUser(UUID blockerId, UUID blockedId) {
         User blocker = findUser(blockerId);
-        if (blocker.getBlockedUsers().remove(findUser(blockedId))) {
-            userRepository.save(blocker);
-        }
+        User blocked = findUser(blockedId);
+
+        userBlockRepository.findByBlockerAndBlocked(blocker, blocked)
+                .ifPresent(userBlockRepository::delete);
     }
 
     @Transactional(readOnly = true)
     public boolean isUserBlocked(UUID blockerId, UUID blockedId) {
-        return findUser(blockerId).getBlockedUsers().contains(findUser(blockedId));
+        User blocker = findUser(blockerId);
+        User blocked = findUser(blockedId);
+
+        return userBlockRepository.existsByBlockerAndBlocked(blocker, blocked);
     }
 
     /*----------  helper  ----------*/

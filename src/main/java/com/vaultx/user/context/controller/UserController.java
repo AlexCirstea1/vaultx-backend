@@ -14,12 +14,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "User", description = "User management endpoints")
 public class UserController {
 
@@ -128,9 +130,14 @@ public class UserController {
 
     @PostMapping("/block/{blockedId}")
     @Operation(summary = "Block a user", description = "Blocks a user by their ID, preventing further interactions")
-    public ResponseEntity<Void> blockUser(HttpServletRequest request, @PathVariable UUID blockedId) {
-        userService.blockUser(blockedId, request);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> blockUser(HttpServletRequest request, @PathVariable UUID blockedId) {
+        try {
+            userService.blockUser(blockedId, request);
+            return ResponseEntity.ok("User blocked successfully");
+        } catch (Exception e) {
+            log.error("Error blocking user: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/block/{blockedId}")

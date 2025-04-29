@@ -212,14 +212,6 @@ public class PrivateChatService {
         messagingTemplate.convertAndSendToUser(
                 entity.getRecipient().getId().toString(), "/queue/messages", toRecipient);
         messagingTemplate.convertAndSendToUser(entity.getSender().getId().toString(), "/queue/sent", toSender);
-
-        // Log messaging activity
-        activityService.logActivity(
-                entity.getSender(),
-                ActivityType.MESSAGE,
-                "Message sent to " + entity.getRecipient().getUsername(),
-                false,
-                "Private message");
     }
 
     private int countUnreadMessages(UUID userId, UUID otherUserId) {

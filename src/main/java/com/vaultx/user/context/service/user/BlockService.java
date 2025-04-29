@@ -3,6 +3,9 @@ package com.vaultx.user.context.service.user;
 import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.UserRepository;
+
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,16 +21,30 @@ public class BlockService {
 
     @Transactional
     public void blockUser(UUID blockerId, UUID blockedId) {
+        if (blockerId.equals(blockedId)) {
+            throw new IllegalArgumentException("Cannot block yourself");
+        }
+
         User blocker = findUser(blockerId);
         User blocked = findUser(blockedId);
 
-        if (blocker.getBlockedUsers().add(blocked)) {
+        // Create a new HashSet with the existing blocked users
+        Set<User> updatedBlockedUsers = new HashSet<>(blocker.getBlockedUsers());
+
+        // Add the new blocked user to this copy
+        boolean added = updatedBlockedUsers.add(blocked);
+
+        if (added) {
+            // Update the reference in the entity
+            blocker.setBlockedUsers(updatedBlockedUsers);
+
             activityService.logActivity(
                     blocker,
                     ActivityType.USER_ACTION,
                     "Blocked a user",
                     false,
                     "Blocked user: " + blocked.getUsername());
+
             userRepository.save(blocker);
         }
     }

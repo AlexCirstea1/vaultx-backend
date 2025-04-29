@@ -73,7 +73,18 @@ public class PrivateChatService {
 
         List<ChatMessage> conversation = chatMessageRepository.findConversation(currentUserUuid, participantUuid);
 
-        return conversation.stream().map(chatMessageMapper::toDto).collect(Collectors.toList());
+        return conversation.stream()
+                .map(this::enhanceChatMessageDto)
+                .toList();
+    }
+
+    private ChatMessageDTO enhanceChatMessageDto(ChatMessage entity) {
+        ChatMessageDTO dto = chatMessageMapper.toDto(entity);
+        if (entity.isRead() || entity.getReadTimestamp() != null) {
+            dto.setRead(true);
+        }
+        dto.setReadTimestamp(entity.getReadTimestamp());
+        return dto;
     }
 
     public List<ChatHistoryDTO> getChatSummaries(String currentUserId) {

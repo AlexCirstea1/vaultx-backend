@@ -2,8 +2,6 @@ package com.vaultx.user.context.model.authentication.response;
 
 import java.time.Instant;
 import java.util.UUID;
-
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -2,7 +2,6 @@ package com.vaultx.user.context.model.blockchain;
 
 import java.time.Instant;
 import java.util.UUID;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,7 +34,6 @@ public class DIDEvent {
         this.payload = jsonPayload;
     }
 
-
     /**
      * Convert this event into a CSV-formatted line.
      */
@@ -45,14 +43,14 @@ public class DIDEvent {
         // Wrap the payload in quotes in case it contains commas
         safePayload = "\"" + safePayload + "\"";
 
-        return String.join(",",
+        return String.join(
+                ",",
                 eventId == null ? "" : eventId.toString(),
                 userId == null ? "" : userId.toString(),
                 eventType == null ? "" : eventType.name(),
                 payloadHash == null ? "" : payloadHash,
                 String.valueOf(kafkaOffset),
                 timestamp == null ? "" : timestamp.toString(),
-                safePayload
-        );
+                safePayload);
     }
 }

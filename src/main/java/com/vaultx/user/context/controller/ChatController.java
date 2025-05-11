@@ -1,7 +1,9 @@
 package com.vaultx.user.context.controller;
 
+import com.vaultx.user.context.model.file.FileMetadataWS;
 import com.vaultx.user.context.model.messaging.dto.*;
 import com.vaultx.user.context.service.chat.ChatService;
+import com.vaultx.user.context.service.chat.PrivateChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class ChatController {
 
     private final ChatService chatService;
+    private final PrivateChatService privateChatService;
 
     @MessageMapping("/sendPrivateMessage")
     @Operation(summary = "Send private message via WebSocket", hidden = true)
@@ -287,5 +290,12 @@ public class ChatController {
         String userId = ((Jwt) auth.getPrincipal()).getSubject();
         chatService.cancelChatRequest(id, userId);
         return ResponseEntity.ok().build();
+    }
+
+    @MessageMapping("/sendFileMetadata")
+    public void sendFileMetadata(FileMetadataWS meta, Authentication auth) {
+        String senderId = ((Jwt) auth.getPrincipal()).getSubject();
+
+        privateChatService.handleFileMetadata(meta, senderId);
     }
 }

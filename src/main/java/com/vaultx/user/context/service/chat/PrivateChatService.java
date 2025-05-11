@@ -3,11 +3,14 @@ package com.vaultx.user.context.service.chat;
 import com.vaultx.user.context.mapper.ChatMessageMapper;
 import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.authentication.response.ReadReceiptNotification;
+import com.vaultx.user.context.model.file.ChatFile;
+import com.vaultx.user.context.model.file.FileMetadataWS;
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import com.vaultx.user.context.model.messaging.dto.ChatHistoryDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
 import com.vaultx.user.context.model.messaging.dto.MarkReadRequest;
 import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.repository.ChatFileRepository;
 import com.vaultx.user.context.repository.ChatMessageRepository;
 import com.vaultx.user.context.service.user.ActivityService;
 import com.vaultx.user.context.service.user.BlockService;
@@ -15,7 +18,6 @@ import com.vaultx.user.context.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,7 @@ public class PrivateChatService {
     private final UserService userService;
     private final BlockService blockService;
     private final ActivityService activityService;
+    private final ChatFileRepository chatFileRepository;
 
     @Transactional
     public void sendPrivateMessage(ChatMessageDTO chatMessageDto, String senderId) {
@@ -73,9 +76,7 @@ public class PrivateChatService {
 
         List<ChatMessage> conversation = chatMessageRepository.findConversation(currentUserUuid, participantUuid);
 
-        return conversation.stream()
-                .map(this::enhanceChatMessageDto)
-                .toList();
+        return conversation.stream().map(this::enhanceChatMessageDto).toList();
     }
 
     private ChatMessageDTO enhanceChatMessageDto(ChatMessage entity) {
@@ -237,9 +238,8 @@ public class PrivateChatService {
 
         LocalDateTime readTime = LocalDateTime.now();
 
-        List<ChatMessage> oneTimeMessages = messages.stream()
-                .filter(ChatMessage::isOneTime)
-                .toList();
+        List<ChatMessage> oneTimeMessages =
+                messages.stream().filter(ChatMessage::isOneTime).toList();
 
         messages.forEach(m -> {
             m.setRead(true);
@@ -271,5 +271,77 @@ public class PrivateChatService {
                     false,
                     "Messages deleted: " + oneTimeMessages.size());
         }
+    }
+
+    /* ───────────────  Handle FILE metadata via WS  ─────────────── */
+
+    @Transactional
+    public void handleFileMetadata(FileMetadataWS meta, String senderId) {
+
+        UUID senderUuid = UUID.fromString(senderId);
+        UUID recipientUuid = UUID.fromString(meta.getRecipient());
+
+        checkBlockStatus(senderUuid, recipientUuid);
+
+        /* 1️⃣  placeholder ChatMessage */
+        ChatMessage msg = ChatMessage.builder()
+                .sender(userService.getUserById(senderUuid))
+                .recipient(userService.getUserById(recipientUuid))
+                .ciphertext("__FILE__")
+                .iv(meta.getIv())
+                .encryptedKeyForSender(meta.getEncryptedKeyForSender())
+                .encryptedKeyForRecipient(meta.getEncryptedKeyForRecipient())
+                .senderKeyVersion(meta.getSenderKeyVersion())
+                .recipientKeyVersion(meta.getRecipientKeyVersion())
+                .timestamp(LocalDateTime.now())
+                .isRead(false)
+                .oneTime(false)
+                .build();
+        chatMessageRepository.save(msg);
+
+        /* 2️⃣  ChatFile row (bytes will arrive later) */
+        chatFileRepository.save(ChatFile.builder()
+                .id(meta.getFileId())
+                .message(msg)
+                .fileName(meta.getFileName())
+                .mimeType(meta.getMimeType())
+                .sizeBytes(meta.getSizeBytes())
+                .iv(meta.getIv())
+                .encryptedKeySender(meta.getEncryptedKeyForSender())
+                .encryptedKeyRecipient(meta.getEncryptedKeyForRecipient())
+                .senderKeyVersion(meta.getSenderKeyVersion())
+                .recipientKeyVersion(meta.getRecipientKeyVersion())
+                .build());
+
+        /* 3️⃣  Push WS notifications */
+        meta.setMessageId(msg.getId());
+        meta.setTimestamp(LocalDateTime.now());
+
+        FileMetadataWS toRecipient = cloneMeta(meta, "FILE_INCOMING");
+        FileMetadataWS toSender = cloneMeta(meta, "FILE_SENT");
+
+        messagingTemplate.convertAndSendToUser(recipientUuid.toString(), "/queue/messages", toRecipient);
+        messagingTemplate.convertAndSendToUser(senderUuid.toString(), "/queue/sent", toSender);
+    }
+
+    /* simple deep–clone helper */
+    private FileMetadataWS cloneMeta(FileMetadataWS src, String type) {
+        return FileMetadataWS.builder()
+                .messageId(src.getMessageId())
+                .fileId(src.getFileId())
+                .recipient(src.getRecipient())
+                .sender(src.getSender())
+                .fileName(src.getFileName())
+                .mimeType(src.getMimeType())
+                .sizeBytes(src.getSizeBytes())
+                .iv(src.getIv())
+                .encryptedKeyForSender(src.getEncryptedKeyForSender())
+                .encryptedKeyForRecipient(src.getEncryptedKeyForRecipient())
+                .senderKeyVersion(src.getSenderKeyVersion())
+                .recipientKeyVersion(src.getRecipientKeyVersion())
+                .timestamp(src.getTimestamp())
+                .clientTempId(src.getClientTempId())
+                .type(type)
+                .build();
     }
 }

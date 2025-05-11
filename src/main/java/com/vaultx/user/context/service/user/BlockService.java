@@ -44,11 +44,7 @@ public class BlockService {
         userBlockRepository.save(userBlock);
 
         activityService.logActivity(
-                blocker,
-                ActivityType.USER_ACTION,
-                "Blocked a user",
-                false,
-                "Blocked user: " + blocked.getUsername());
+                blocker, ActivityType.USER_ACTION, "Blocked a user", false, "Blocked user: " + blocked.getUsername());
     }
 
     @Transactional
@@ -56,8 +52,7 @@ public class BlockService {
         User blocker = findUser(blockerId);
         User blocked = findUser(blockedId);
 
-        userBlockRepository.findByBlockerAndBlocked(blocker, blocked)
-                .ifPresent(userBlockRepository::delete);
+        userBlockRepository.findByBlockerAndBlocked(blocker, blocked).ifPresent(userBlockRepository::delete);
 
         activityService.logActivity(
                 blocker,

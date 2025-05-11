@@ -1,12 +1,12 @@
 package com.vaultx.user.context.model.user;
 
 import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "user_blocks")

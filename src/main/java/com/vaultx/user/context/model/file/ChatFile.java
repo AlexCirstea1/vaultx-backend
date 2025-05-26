@@ -23,13 +23,17 @@ public class ChatFile {
     @JoinColumn(name = "message_id")
     private ChatMessage message;
 
+    @Column(length = 1000)
     private String fileName;
     private String mimeType;
     private long sizeBytes;
 
     /* crypto */
+    @Column(name = "iv", columnDefinition = "TEXT")
     private String iv;
+    @Column(name = "encrypted_key_sender", columnDefinition = "TEXT")
     private String encryptedKeySender;
+    @Column(name = "encrypted_key_recipient", columnDefinition = "TEXT")
     private String encryptedKeyRecipient;
     private String senderKeyVersion;
     private String recipientKeyVersion;

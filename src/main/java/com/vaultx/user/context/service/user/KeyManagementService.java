@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import static com.vaultx.user.context.model.blockchain.EventType.USER_KEY_ROTATED;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -88,7 +90,7 @@ public class KeyManagementService {
             rotationInfo.put("timestamp", LocalDateTime.now().toString());
 
             if (user.isBlockchainConsent()) {
-                blockchainService.recordDIDEvent(user, EventType.USER_KEY_ROTATED, rotationInfo);
+                blockchainService.recordDIDEvent(user, USER_KEY_ROTATED, rotationInfo);
             }
         } else {
             // First-time registration of the public key

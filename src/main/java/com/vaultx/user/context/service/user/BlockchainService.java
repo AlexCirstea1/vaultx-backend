@@ -25,6 +25,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import static com.vaultx.user.context.model.activity.ActivityType.BLOCKCHAIN;
+import static com.vaultx.user.context.model.blockchain.EventType.*;
+
 @Service
 @Slf4j
 public class BlockchainService {
@@ -101,7 +104,7 @@ public class BlockchainService {
         String description = getDescription(eventType);
         activityService.logActivity(
                 user,
-                ActivityType.BLOCKCHAIN,
+                BLOCKCHAIN,
                 description,
                 false,
                 "Event Type: " + eventType + ", Transaction ID: 0x"
@@ -116,13 +119,13 @@ public class BlockchainService {
      */
     private static String getDescription(EventType eventType) {
         String description = "Document hash committed to blockchain";
-        if (eventType == EventType.USER_KEY_ROTATED) {
+        if (eventType == USER_KEY_ROTATED) {
             description = "Encryption key rotation recorded on blockchain";
-        } else if (eventType == EventType.USER_REGISTERED) {
+        } else if (eventType == USER_REGISTERED) {
             description = "New user registered on blockchain";
-        } else if (eventType == EventType.USER_ROLE_CHANGED) {
+        } else if (eventType == USER_ROLE_CHANGED) {
             description = "User role change recorded on blockchain";
-        } else if (eventType == EventType.CHAT_CREATED) {
+        } else if (eventType == CHAT_CREATED) {
             description = "New conversation created and recorded on blockchain";
         }
         return description;

@@ -1,6 +1,10 @@
 package com.vaultx.user.context.exception;
 
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AccountStatusException;
@@ -8,6 +12,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -61,6 +66,30 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCustomBadCredentialsException(
             CustomBadCredentialsException ex, WebRequest request) {
         return buildErrorResponse(ex, ex.getMessage(), HttpStatus.UNAUTHORIZED, request);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMediaTypeNotSupportedException(
+            HttpMediaTypeNotSupportedException ex, WebRequest request) {
+
+        Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+        log.error("Media type not supported: {}", ex.getContentType());
+        log.error("Supported media types: {}", ex.getSupportedMediaTypes().stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(", ")));
+
+        String message = String.format(
+                "Content type '%s' not supported. Supported types are: %s",
+                ex.getContentType(),
+                ex.getSupportedMediaTypes().stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(", ")));
+
+        return buildErrorResponse(
+                ex,
+                message,
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                request);
     }
 
     private ResponseEntity<ErrorResponse> buildErrorResponse(

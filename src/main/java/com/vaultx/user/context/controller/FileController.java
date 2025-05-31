@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
@@ -39,15 +41,29 @@ public class FileController {
             Authentication authentication)
             throws IOException {
 
+        log.info("File upload received - name: {}, size: {}, contentType: {}",
+                file.getOriginalFilename(),
+                file.getSize(),
+                file.getContentType());
+        log.info("Metadata received: {}", meta);
+
         String uploaderId = ((Jwt) authentication.getPrincipal()).getSubject();
+        log.info("Uploader ID: {}", uploaderId);
 
-        // 1️⃣  persist metadata (ChatMessage + ChatFile rows)
-        FileUploadResponse resp = chatFileService.registerAndLink(meta, uploaderId);
+        try {
+            FileUploadResponse resp = chatFileService.registerAndLink(meta, uploaderId);
+            log.info("File metadata registered with ID: {}", resp.getFileId());
 
-        // 2️⃣  store cipher-bytes on disk / S3 / min-io …
-        storage.saveEncryptedFile(resp.getFileId(), file.getBytes());
+            byte[] fileBytes = file.getBytes();
+            log.info("Read {} bytes from uploaded file", fileBytes.length);
+            storage.saveEncryptedFile(resp.getFileId(), fileBytes);
+            log.info("File successfully saved to storage");
 
-        return ResponseEntity.ok(resp);
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            log.error("Error processing file upload", e);
+            throw e;
+        }
     }
 
     /* ───────────────  DOWNLOAD  ─────────────── */

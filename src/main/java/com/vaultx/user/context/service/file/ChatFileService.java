@@ -1,11 +1,14 @@
 package com.vaultx.user.context.service.file;
 
+import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.file.ChatFile;
 import com.vaultx.user.context.model.file.FileUploadMeta;
 import com.vaultx.user.context.model.file.FileUploadResponse;
 import com.vaultx.user.context.model.messaging.ChatMessage;
+import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.ChatFileRepository;
 import com.vaultx.user.context.repository.ChatMessageRepository;
+import com.vaultx.user.context.service.user.BlockchainService;
 import com.vaultx.user.context.service.user.UserService;
 import jakarta.transaction.Transactional;
 import java.util.UUID;
@@ -15,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import static com.vaultx.user.context.model.blockchain.EventType.FILE_UPLOAD;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -23,6 +28,7 @@ public class ChatFileService {
     private final ChatFileRepository chatFileRepo;
     private final ChatMessageRepository chatMsgRepo;
     private final UserService userService;
+    private final BlockchainService blockchainService;
 
     /* ──────────────────  upload metadata  ────────────────── */
 
@@ -61,6 +67,10 @@ public class ChatFileService {
         file.setRecipientKeyVersion(meta.getRecipientKeyVersion());
 
         chatFileRepo.save(file);
+
+        User user = userService.getUserById(UUID.fromString(uploaderId));
+
+        blockchainService.recordDIDEvent(user, FILE_UPLOAD, meta.getFileName());
 
         return new FileUploadResponse(file.getId(), message.getId());
     }

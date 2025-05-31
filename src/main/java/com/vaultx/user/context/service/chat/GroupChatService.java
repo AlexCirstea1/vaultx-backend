@@ -22,6 +22,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import static com.vaultx.user.context.model.blockchain.EventType.CHAT_CREATED;
+
 @Service
 @AllArgsConstructor
 @Slf4j
@@ -56,7 +58,7 @@ public class GroupChatService {
 
         // 2) Record a pairing event for each user
         for (User user : participantUsers) {
-            blockchainService.recordDIDEvent(user, EventType.CHAT_CREATED, groupChat);
+            blockchainService.recordDIDEvent(user, CHAT_CREATED, groupChat);
         }
         log.info("Recorded group pairing event on blockchain for group: {}", groupChat.getId());
 

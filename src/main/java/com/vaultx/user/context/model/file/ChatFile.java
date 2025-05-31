@@ -23,8 +23,9 @@ public class ChatFile {
     @JoinColumn(name = "message_id")
     private ChatMessage message;
 
-    @Column(length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String fileName;
+    @Column(columnDefinition = "TEXT")
     private String mimeType;
     private long sizeBytes;
 

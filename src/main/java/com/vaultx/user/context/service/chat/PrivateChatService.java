@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -42,7 +43,7 @@ public class PrivateChatService {
     private final ActivityService activityService;
     private final ChatFileRepository chatFileRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendPrivateMessage(ChatMessageDTO chatMessageDto, String senderId) {
         UUID senderUuid = UUID.fromString(senderId);
         UUID recipientUuid = UUID.fromString(chatMessageDto.getRecipient());

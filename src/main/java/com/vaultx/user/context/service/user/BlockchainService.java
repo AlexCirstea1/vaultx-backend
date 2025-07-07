@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.vaultx.user.context.model.blockchain.DIDEvent;
 import com.vaultx.user.context.model.blockchain.EventHistory;
 import com.vaultx.user.context.model.blockchain.EventType;
+import com.vaultx.user.context.model.file.FileBlockchainMeta;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.service.kafka.KafkaProducer;
 import lombok.extern.slf4j.Slf4j;
@@ -126,6 +127,22 @@ public class BlockchainService {
                 rest.exchange(url, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<>() {
                 });
         return resp.getBody();
+    }
+
+    public DIDEvent getFileEvent(UUID userId, UUID fileId) {
+        List<DIDEvent> events = getEventsByUser(userId);
+        return events.stream()
+                .filter(event -> event.getEventType() == FILE_UPLOAD)
+                .filter(event -> {
+                    try {
+                        FileBlockchainMeta meta = new ObjectMapper().readValue(event.getPayload(), FileBlockchainMeta.class);
+                        return meta.getFileId().equals(fileId);
+                    } catch (Exception e) {
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElse(null);
     }
 
     /**

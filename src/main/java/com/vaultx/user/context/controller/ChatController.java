@@ -2,7 +2,6 @@ package com.vaultx.user.context.controller;
 
 import com.vaultx.user.context.model.messaging.dto.*;
 import com.vaultx.user.context.service.chat.ChatService;
-import com.vaultx.user.context.service.chat.PrivateChatService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,7 +27,6 @@ import java.util.UUID;
 public class ChatController {
 
     private final ChatService chatService;
-    private final PrivateChatService privateChatService;
 
     @MessageMapping("/sendPrivateMessage")
     @Operation(summary = "Send private message via WebSocket", hidden = true)

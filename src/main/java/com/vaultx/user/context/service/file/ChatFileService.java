@@ -5,13 +5,16 @@ import com.vaultx.user.context.model.file.ChatFile;
 import com.vaultx.user.context.model.file.FileUploadMeta;
 import com.vaultx.user.context.model.file.FileUploadResponse;
 import com.vaultx.user.context.model.messaging.ChatMessage;
+import com.vaultx.user.context.model.messaging.MessageType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.ChatFileRepository;
 import com.vaultx.user.context.repository.ChatMessageRepository;
 import com.vaultx.user.context.service.user.BlockchainService;
 import com.vaultx.user.context.service.user.UserService;
 import jakarta.transaction.Transactional;
+
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,55 +33,44 @@ public class ChatFileService {
     private final UserService userService;
     private final BlockchainService blockchainService;
 
-    /* ──────────────────  upload metadata  ────────────────── */
-
     @Transactional
     public FileUploadResponse registerAndLink(FileUploadMeta meta, String uploaderId) {
-
-        if (!uploaderId.equals(meta.getSender())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Uploader id does not match sender field");
-        }
-
         UUID msgId = meta.getMessageId();
         UUID fileId = meta.getFileId();
 
-        /* placeholder comes from WS - if absent we build it */
-        ChatMessage message = chatMsgRepo.findById(msgId).orElseGet(() -> {
-            log.warn("WS placeholder missing – creating ChatMessage on upload");
-            return buildAndSaveMessage(meta);
-        });
+        // Find the message that was created via WebSocket
+        ChatMessage message = chatMsgRepo.findById(msgId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
 
-        /* only original sender may upload */
+        // Verify uploader is the sender
         if (!message.getSender().getId().toString().equals(uploaderId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only sender can upload file");
         }
 
-        ChatFile file = chatFileRepo
-                .findById(fileId)
-                .orElse(ChatFile.builder().id(fileId).message(message).build());
+        // Verify message is a file message
+        if (message.getMessageType() != MessageType.FILE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message is not a file message");
+        }
 
-        file.setFileName(meta.getFileName());
-        file.setMimeType(meta.getMimeType());
-        file.setSizeBytes(meta.getSizeBytes());
-        file.setIv(meta.getIv());
-        file.setEncryptedKeySender(meta.getEncryptedKeyForSender());
-        file.setEncryptedKeyRecipient(meta.getEncryptedKeyForRecipient());
-        file.setSenderKeyVersion(meta.getSenderKeyVersion());
-        file.setRecipientKeyVersion(meta.getRecipientKeyVersion());
+        // Get the existing ChatFile (created during WebSocket message)
+        ChatFile file = chatFileRepo.findById(fileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File record not found"));
+
+        // Update any missing metadata (shouldn't be necessary but safety check)
+        if (file.getFileName() == null) file.setFileName(meta.getFileName());
+        if (file.getMimeType() == null) file.setMimeType(meta.getMimeType());
+        if (file.getSizeBytes() == 0) file.setSizeBytes(meta.getSizeBytes());
 
         chatFileRepo.save(file);
 
+        // Record blockchain event
         User user = userService.getUserById(UUID.fromString(uploaderId));
-
         blockchainService.recordDIDEvent(user, FILE_UPLOAD, meta.getFileName());
 
         return new FileUploadResponse(file.getId(), message.getId());
     }
 
-    /* ──────────────────  download authorisation  ────────────────── */
-
     public ChatFile authoriseAndGet(UUID fileId, String requesterId) {
-
         ChatFile file = chatFileRepo
                 .findById(fileId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "File not found"));
@@ -90,22 +82,5 @@ public class ChatFileService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not a participant in this conversation");
         }
         return file;
-    }
-
-    /* ──────────────────  helper  ────────────────── */
-
-    private ChatMessage buildAndSaveMessage(FileUploadMeta meta) {
-        ChatMessage msg = ChatMessage.builder()
-                .sender(userService.getUserById(UUID.fromString(meta.getSender())))
-                .recipient(userService.getUserById(UUID.fromString(meta.getRecipient())))
-                .ciphertext("__FILE__")
-                .iv(meta.getIv())
-                .encryptedKeyForSender(meta.getEncryptedKeyForSender())
-                .encryptedKeyForRecipient(meta.getEncryptedKeyForRecipient())
-                .senderKeyVersion(meta.getSenderKeyVersion())
-                .recipientKeyVersion(meta.getRecipientKeyVersion())
-                .oneTime(false)
-                .build();
-        return chatMsgRepo.save(msg);
     }
 }

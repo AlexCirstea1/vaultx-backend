@@ -1,5 +1,6 @@
 package com.vaultx.user.context.model.messaging;
 
+import com.vaultx.user.context.model.file.ChatFile;
 import com.vaultx.user.context.model.user.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -16,9 +17,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessage {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -35,17 +35,9 @@ public class ChatMessage {
     @Column(name = "recipient_key_version")
     private String recipientKeyVersion;
 
-    /**
-     * Now we store encrypted text instead of plaintext.
-     * Could be Base64-encoded AES-GCM ciphertext, for example.
-     */
     @Column(name = "cipher_text", columnDefinition = "TEXT", nullable = false)
     private String ciphertext;
 
-    /**
-     * For AES-GCM, you also need an IV/nonce.
-     * Store it as Base64 or hex string.
-     */
     @Column(name = "iv", columnDefinition = "TEXT")
     private String iv;
 
@@ -54,6 +46,14 @@ public class ChatMessage {
 
     @Column(name = "encrypted_key_for_recipient", columnDefinition = "TEXT")
     private String encryptedKeyForRecipient;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "message_type", nullable = false)
+    @Builder.Default
+    private MessageType messageType = MessageType.NORMAL;
+
+    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    private ChatFile file;
 
     @Column(name = "timestamp", nullable = false)
     @Builder.Default

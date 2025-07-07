@@ -2,11 +2,10 @@ package com.vaultx.user.context.model.file;
 
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import jakarta.persistence.*;
+
 import java.util.UUID;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
 
 @Entity
 @Table(name = "chat_files")
@@ -15,11 +14,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ChatFile {
-
     @Id
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne
     @JoinColumn(name = "message_id")
     private ChatMessage message;
 
@@ -29,7 +27,6 @@ public class ChatFile {
     private String mimeType;
     private long sizeBytes;
 
-    /* crypto */
     @Column(name = "iv", columnDefinition = "TEXT")
     private String iv;
     @Column(name = "encrypted_key_sender", columnDefinition = "TEXT")

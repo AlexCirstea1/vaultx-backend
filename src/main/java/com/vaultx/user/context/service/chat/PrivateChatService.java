@@ -4,10 +4,11 @@ import com.vaultx.user.context.mapper.ChatMessageMapper;
 import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.authentication.response.ReadReceiptNotification;
 import com.vaultx.user.context.model.file.ChatFile;
-import com.vaultx.user.context.model.file.FileMetadataWS;
 import com.vaultx.user.context.model.messaging.ChatMessage;
+import com.vaultx.user.context.model.messaging.MessageType;
 import com.vaultx.user.context.model.messaging.dto.ChatHistoryDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
+import com.vaultx.user.context.model.file.FileInfo;
 import com.vaultx.user.context.model.messaging.dto.MarkReadRequest;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.ChatFileRepository;
@@ -50,21 +51,44 @@ public class PrivateChatService {
         User senderUser = userService.getUserById(senderUuid);
         User recipientUser = userService.getUserById(recipientUuid);
 
+        // Determine message type based on file presence
+        MessageType messageType = (chatMessageDto.getFile() != null) ? MessageType.FILE : MessageType.NORMAL;
+        String ciphertext = (messageType == MessageType.FILE) ? "__FILE__" : chatMessageDto.getCiphertext();
+
         // Build & save entity
         ChatMessage entity = ChatMessage.builder()
                 .sender(senderUser)
                 .recipient(recipientUser)
-                .ciphertext(chatMessageDto.getCiphertext())
+                .ciphertext(ciphertext)
                 .encryptedKeyForRecipient(chatMessageDto.getEncryptedKeyForRecipient())
                 .encryptedKeyForSender(chatMessageDto.getEncryptedKeyForSender())
                 .iv(chatMessageDto.getIv())
                 .senderKeyVersion(chatMessageDto.getSenderKeyVersion())
                 .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
+                .messageType(messageType)
                 .timestamp(LocalDateTime.now())
                 .isRead(false)
                 .oneTime(chatMessageDto.isOneTime())
                 .build();
         entity = chatMessageRepository.save(entity);
+
+        // If it's a file message, create ChatFile placeholder
+        if (messageType == MessageType.FILE && chatMessageDto.getFile() != null) {
+            FileInfo fileInfo = chatMessageDto.getFile();
+            ChatFile chatFile = ChatFile.builder()
+                    .id(fileInfo.getFileId())
+                    .message(entity)
+                    .fileName(fileInfo.getFileName())
+                    .mimeType(fileInfo.getMimeType())
+                    .sizeBytes(fileInfo.getSizeBytes())
+                    .iv(chatMessageDto.getIv())
+                    .encryptedKeySender(chatMessageDto.getEncryptedKeyForSender())
+                    .encryptedKeyRecipient(chatMessageDto.getEncryptedKeyForRecipient())
+                    .senderKeyVersion(chatMessageDto.getSenderKeyVersion())
+                    .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
+                    .build();
+            chatFileRepository.save(chatFile);
+        }
 
         // Prepare and send messages
         sendMessageNotifications(entity, chatMessageDto);
@@ -271,77 +295,5 @@ public class PrivateChatService {
                     false,
                     "Messages deleted: " + oneTimeMessages.size());
         }
-    }
-
-    /* ───────────────  Handle FILE metadata via WS  ─────────────── */
-
-    @Transactional
-    public void handleFileMetadata(FileMetadataWS meta, String senderId) {
-
-        UUID senderUuid = UUID.fromString(senderId);
-        UUID recipientUuid = UUID.fromString(meta.getRecipient());
-
-        checkBlockStatus(senderUuid, recipientUuid);
-
-        /* 1️⃣  placeholder ChatMessage */
-        ChatMessage msg = ChatMessage.builder()
-                .sender(userService.getUserById(senderUuid))
-                .recipient(userService.getUserById(recipientUuid))
-                .ciphertext("__FILE__")
-                .iv(meta.getIv())
-                .encryptedKeyForSender(meta.getEncryptedKeyForSender())
-                .encryptedKeyForRecipient(meta.getEncryptedKeyForRecipient())
-                .senderKeyVersion(meta.getSenderKeyVersion())
-                .recipientKeyVersion(meta.getRecipientKeyVersion())
-                .timestamp(LocalDateTime.now())
-                .isRead(false)
-                .oneTime(false)
-                .build();
-        chatMessageRepository.save(msg);
-
-        /* 2️⃣  ChatFile row (bytes will arrive later) */
-        chatFileRepository.save(ChatFile.builder()
-                .id(meta.getFileId())
-                .message(msg)
-                .fileName(meta.getFileName())
-                .mimeType(meta.getMimeType())
-                .sizeBytes(meta.getSizeBytes())
-                .iv(meta.getIv())
-                .encryptedKeySender(meta.getEncryptedKeyForSender())
-                .encryptedKeyRecipient(meta.getEncryptedKeyForRecipient())
-                .senderKeyVersion(meta.getSenderKeyVersion())
-                .recipientKeyVersion(meta.getRecipientKeyVersion())
-                .build());
-
-        /* 3️⃣  Push WS notifications */
-        meta.setMessageId(msg.getId());
-        meta.setTimestamp(LocalDateTime.now());
-
-        FileMetadataWS toRecipient = cloneMeta(meta, "FILE_INCOMING");
-        FileMetadataWS toSender = cloneMeta(meta, "FILE_SENT");
-
-        messagingTemplate.convertAndSendToUser(recipientUuid.toString(), "/queue/messages", toRecipient);
-        messagingTemplate.convertAndSendToUser(senderUuid.toString(), "/queue/sent", toSender);
-    }
-
-    /* simple deep–clone helper */
-    private FileMetadataWS cloneMeta(FileMetadataWS src, String type) {
-        return FileMetadataWS.builder()
-                .messageId(src.getMessageId())
-                .fileId(src.getFileId())
-                .recipient(src.getRecipient())
-                .sender(src.getSender())
-                .fileName(src.getFileName())
-                .mimeType(src.getMimeType())
-                .sizeBytes(src.getSizeBytes())
-                .iv(src.getIv())
-                .encryptedKeyForSender(src.getEncryptedKeyForSender())
-                .encryptedKeyForRecipient(src.getEncryptedKeyForRecipient())
-                .senderKeyVersion(src.getSenderKeyVersion())
-                .recipientKeyVersion(src.getRecipientKeyVersion())
-                .timestamp(src.getTimestamp())
-                .clientTempId(src.getClientTempId())
-                .type(type)
-                .build();
     }
 }

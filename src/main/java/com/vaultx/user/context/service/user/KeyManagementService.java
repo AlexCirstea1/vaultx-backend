@@ -2,21 +2,21 @@ package com.vaultx.user.context.service.user;
 
 import com.vaultx.user.context.model.PublicKeyResponse;
 import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.model.user.UserKeyHistory;
 import com.vaultx.user.context.repository.UserKeyHistoryRepository;
 import com.vaultx.user.context.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import static com.vaultx.user.context.model.blockchain.EventType.USER_KEY_ROTATED;
 

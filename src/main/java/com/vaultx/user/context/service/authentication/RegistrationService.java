@@ -11,6 +11,12 @@ import com.vaultx.user.context.repository.RoleRepository;
 import com.vaultx.user.context.repository.UserRepository;
 import com.vaultx.user.context.service.user.BlockchainService;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -19,11 +25,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

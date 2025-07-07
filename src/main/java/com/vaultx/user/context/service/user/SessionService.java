@@ -4,13 +4,14 @@ import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

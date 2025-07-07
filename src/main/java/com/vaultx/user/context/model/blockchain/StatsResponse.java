@@ -1,8 +1,9 @@
 package com.vaultx.user.context.model.blockchain;
 
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import java.util.Map;
 
 @Data
 @AllArgsConstructor

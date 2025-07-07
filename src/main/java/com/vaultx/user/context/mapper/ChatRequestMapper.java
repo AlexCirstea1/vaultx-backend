@@ -2,7 +2,9 @@ package com.vaultx.user.context.mapper;
 
 import com.vaultx.user.context.model.messaging.ChatRequest;
 import com.vaultx.user.context.model.messaging.dto.ChatRequestDTO;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ChatRequestMapper {

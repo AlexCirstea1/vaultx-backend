@@ -1,8 +1,5 @@
 package com.vaultx.user.context;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
 import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatHistoryDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
@@ -10,23 +7,28 @@ import com.vaultx.user.context.model.messaging.dto.MarkReadRequest;
 import com.vaultx.user.context.service.user.PresenceService;
 import com.vaultx.user.context.util.AuthTestUtils;
 import com.vaultx.user.context.util.TestCredentialsGenerator.TestCredentials;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 class PrivateChatIT extends BaseIT {
 
+    String senderToken;
     @MockitoBean
     private PresenceService presenceService;
-
-    String senderToken;
     private String recipientToken;
     private UUID senderId;
     private UUID recipientId;
@@ -69,7 +71,8 @@ class PrivateChatIT extends BaseIT {
                     "/api/messages?recipientId=" + recipientId,
                     HttpMethod.GET,
                     createEntity(null, createAuthHeaders(senderToken)),
-                    new ParameterizedTypeReference<List<ChatMessageDTO>>() {});
+                    new ParameterizedTypeReference<List<ChatMessageDTO>>() {
+                    });
 
             List<ChatMessageDTO> messages = resp.getBody();
             assertThat(messages).isNotNull().isNotEmpty();
@@ -90,7 +93,8 @@ class PrivateChatIT extends BaseIT {
                                             "/api/messages?recipientId=" + senderId,
                                             HttpMethod.GET,
                                             createEntity(null, createAuthHeaders(senderToken)),
-                                            new ParameterizedTypeReference<List<ChatMessageDTO>>() {})
+                                            new ParameterizedTypeReference<List<ChatMessageDTO>>() {
+                                            })
                                     .getBody();
                             Assertions.assertNotNull(list);
                             return list.isEmpty() ? null : list;
@@ -109,7 +113,8 @@ class PrivateChatIT extends BaseIT {
                             "/api/messages?recipientId=" + senderId, // Changed from recipientId to senderId
                             HttpMethod.GET,
                             createEntity(null, createAuthHeaders(senderToken)),
-                            new ParameterizedTypeReference<List<ChatMessageDTO>>() {})
+                            new ParameterizedTypeReference<List<ChatMessageDTO>>() {
+                            })
                     .getBody();
 
             assertThat(after).isNotEmpty();
@@ -127,7 +132,8 @@ class PrivateChatIT extends BaseIT {
                     "/api/chats",
                     HttpMethod.GET,
                     createEntity(null, createAuthHeaders(senderToken)),
-                    new ParameterizedTypeReference<List<ChatHistoryDTO>>() {});
+                    new ParameterizedTypeReference<List<ChatHistoryDTO>>() {
+                    });
 
             List<ChatHistoryDTO> summaries = resp.getBody();
             assertThat(summaries).isNotNull().isNotEmpty();
@@ -146,7 +152,8 @@ class PrivateChatIT extends BaseIT {
                             "/api/messages?recipientId=" + recipientId,
                             HttpMethod.GET,
                             createEntity(null, createAuthHeaders(senderToken)),
-                            new ParameterizedTypeReference<List<ChatMessageDTO>>() {})
+                            new ParameterizedTypeReference<List<ChatMessageDTO>>() {
+                            })
                     .getBody();
             assertThat(before).isNotEmpty();
         });
@@ -162,7 +169,8 @@ class PrivateChatIT extends BaseIT {
                         "/api/messages?recipientId=" + recipientId,
                         HttpMethod.GET,
                         createEntity(null, createAuthHeaders(senderToken)),
-                        new ParameterizedTypeReference<List<ChatMessageDTO>>() {})
+                        new ParameterizedTypeReference<List<ChatMessageDTO>>() {
+                        })
                 .getBody();
 
         assertThat(afterDelete).isEmpty();

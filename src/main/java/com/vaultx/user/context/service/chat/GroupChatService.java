@@ -1,6 +1,5 @@
 package com.vaultx.user.context.service.chat;
 
-import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.messaging.GroupChat;
 import com.vaultx.user.context.model.messaging.GroupChatMessage;
 import com.vaultx.user.context.model.messaging.dto.GroupChatHistoryDTO;
@@ -10,17 +9,18 @@ import com.vaultx.user.context.repository.GroupChatMessageRepository;
 import com.vaultx.user.context.repository.GroupChatRepository;
 import com.vaultx.user.context.service.user.BlockchainService;
 import com.vaultx.user.context.service.user.UserService;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.modelmapper.ModelMapper;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.modelmapper.ModelMapper;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
 
 import static com.vaultx.user.context.model.blockchain.EventType.CHAT_CREATED;
 

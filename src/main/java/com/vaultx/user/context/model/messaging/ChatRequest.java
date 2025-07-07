@@ -2,11 +2,12 @@ package com.vaultx.user.context.model.messaging;
 
 import com.vaultx.user.context.model.user.User;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(

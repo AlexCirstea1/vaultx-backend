@@ -3,9 +3,6 @@ package com.vaultx.user.context;
 import com.vaultx.user.context.model.user.Role;
 import com.vaultx.user.context.model.user.RoleType;
 import com.vaultx.user.context.repository.RoleRepository;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -15,6 +12,10 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 @SpringBootApplication
 @AllArgsConstructor
 @EnableCaching
@@ -22,12 +23,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @Slf4j
 public class UserContextApplication implements CommandLineRunner {
 
+    private final RoleRepository roleRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
     public static void main(String[] args) {
         SpringApplication.run(UserContextApplication.class, args);
     }
-
-    private final RoleRepository roleRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public void run(String... args) {

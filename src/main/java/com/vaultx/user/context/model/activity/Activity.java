@@ -2,11 +2,12 @@ package com.vaultx.user.context.model.activity;
 
 import com.vaultx.user.context.model.user.User;
 import jakarta.persistence.*;
-import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "user_activities")

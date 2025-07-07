@@ -2,13 +2,14 @@ package com.vaultx.user.context.service.user;
 
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.UserRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
 
 @Service
 public class PresenceService {

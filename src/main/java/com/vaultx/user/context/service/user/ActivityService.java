@@ -1,17 +1,20 @@
 package com.vaultx.user.context.service.user;
 
-import com.vaultx.user.context.model.activity.*;
+import com.vaultx.user.context.model.activity.Activity;
+import com.vaultx.user.context.model.activity.ActivityResponseDTO;
+import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.ActivityRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

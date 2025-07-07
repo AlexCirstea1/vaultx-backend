@@ -1,18 +1,22 @@
 package com.vaultx.user.context.service.user;
 
 import com.vaultx.user.context.model.activity.ActivityType;
-import com.vaultx.user.context.model.user.*;
-import com.vaultx.user.context.repository.*;
+import com.vaultx.user.context.model.user.User;
+import com.vaultx.user.context.model.user.UserReport;
+import com.vaultx.user.context.repository.UserReportRepository;
+import com.vaultx.user.context.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.*;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

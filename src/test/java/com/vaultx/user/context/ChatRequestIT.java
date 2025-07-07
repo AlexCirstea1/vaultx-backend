@@ -1,20 +1,24 @@
 package com.vaultx.user.context;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
 import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatRequestDTO;
 import com.vaultx.user.context.util.AuthTestUtils;
 import com.vaultx.user.context.util.TestCredentialsGenerator.TestCredentials;
-import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ChatRequestIT extends BaseIT {
 
@@ -69,7 +73,8 @@ class ChatRequestIT extends BaseIT {
                 "/api/chat-requests",
                 HttpMethod.GET,
                 createEntity(null, createAuthHeaders(recipientToken)),
-                new ParameterizedTypeReference<List<ChatRequestDTO>>() {});
+                new ParameterizedTypeReference<List<ChatRequestDTO>>() {
+                });
 
         assertThat(pendingResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(pendingResponse.getBody()).isNotEmpty();
@@ -100,7 +105,8 @@ class ChatRequestIT extends BaseIT {
                 "/api/messages?recipientId=" + recipientId,
                 HttpMethod.GET,
                 createEntity(null, createAuthHeaders(senderToken)),
-                new ParameterizedTypeReference<List<ChatMessageDTO>>() {});
+                new ParameterizedTypeReference<List<ChatMessageDTO>>() {
+                });
 
         assertThat(messagesResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(messagesResponse.getBody()).isNotEmpty();
@@ -132,7 +138,8 @@ class ChatRequestIT extends BaseIT {
                 "/api/chat-requests",
                 HttpMethod.GET,
                 createEntity(null, createAuthHeaders(recipientToken)),
-                new ParameterizedTypeReference<List<ChatRequestDTO>>() {});
+                new ParameterizedTypeReference<List<ChatRequestDTO>>() {
+                });
 
         assertThat(pendingResponse.getBody()).isEmpty();
     }
@@ -163,7 +170,8 @@ class ChatRequestIT extends BaseIT {
                 "/api/chat-requests",
                 HttpMethod.GET,
                 createEntity(null, createAuthHeaders(recipientToken)),
-                new ParameterizedTypeReference<List<ChatRequestDTO>>() {});
+                new ParameterizedTypeReference<List<ChatRequestDTO>>() {
+                });
 
         assertThat(pendingResponse.getBody()).isEmpty();
     }

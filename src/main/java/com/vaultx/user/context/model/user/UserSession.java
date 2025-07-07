@@ -2,11 +2,12 @@ package com.vaultx.user.context.model.user;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
-import java.time.Instant;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.Instant;
 
 @Data
 @AllArgsConstructor

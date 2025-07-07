@@ -4,11 +4,11 @@ import com.vaultx.user.context.mapper.ChatMessageMapper;
 import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.authentication.response.ReadReceiptNotification;
 import com.vaultx.user.context.model.file.ChatFile;
+import com.vaultx.user.context.model.file.FileInfo;
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import com.vaultx.user.context.model.messaging.MessageType;
 import com.vaultx.user.context.model.messaging.dto.ChatHistoryDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
-import com.vaultx.user.context.model.file.FileInfo;
 import com.vaultx.user.context.model.messaging.dto.MarkReadRequest;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.repository.ChatFileRepository;
@@ -17,8 +17,6 @@ import com.vaultx.user.context.service.user.ActivityService;
 import com.vaultx.user.context.service.user.BlockService;
 import com.vaultx.user.context.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,6 +25,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor

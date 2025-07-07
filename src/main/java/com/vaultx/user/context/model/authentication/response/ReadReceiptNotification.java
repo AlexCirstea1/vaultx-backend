@@ -1,13 +1,16 @@
 package com.vaultx.user.context.model.authentication.response;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** The message that gets sent to the sender as a read receipt event. */
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * The message that gets sent to the sender as a read receipt event.
+ */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

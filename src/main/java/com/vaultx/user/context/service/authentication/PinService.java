@@ -8,10 +8,11 @@ import com.vaultx.user.context.service.user.ActivityService;
 import com.vaultx.user.context.service.user.UserService;
 import com.vaultx.user.context.utils.CipherUtils;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor

@@ -2,10 +2,12 @@ package com.vaultx.user.context.model.file;
 
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
-
-import lombok.*;
 
 @Entity
 @Table(name = "chat_files")

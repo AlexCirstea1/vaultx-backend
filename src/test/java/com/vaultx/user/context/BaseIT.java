@@ -2,12 +2,6 @@ package com.vaultx.user.context;
 
 import com.vaultx.user.context.util.TestCredentialsGenerator;
 import com.vaultx.user.context.util.TestCredentialsGenerator.TestCredentials;
-import java.lang.reflect.Type;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -30,26 +24,24 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import java.lang.reflect.Type;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class BaseIT {
 
-    @LocalServerPort
-    private int port;
-
-    protected WebSocketStompClient stompClient;
-    protected StompSession stompSession;
-
     static final DockerImageName PG_IMG = DockerImageName.parse("postgres:15-alpine");
-    static final DockerImageName KAFKA_IMG = DockerImageName.parse("confluentinc/cp-kafka:7.6.0");
-    static final DockerImageName REDIS_IMG = DockerImageName.parse("redis:7-alpine");
-
     public static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(PG_IMG)
             .waitingFor(Wait.forLogMessage(".*database system is ready to accept connections.*\\s", 2));
-
+    static final DockerImageName KAFKA_IMG = DockerImageName.parse("confluentinc/cp-kafka:7.6.0");
     public static final ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(KAFKA_IMG)
             .withStartupTimeout(Duration.ofMinutes(3))
             .waitingFor(Wait.forListeningPort());
-
+    static final DockerImageName REDIS_IMG = DockerImageName.parse("redis:7-alpine");
     public static final GenericContainer<?> redis =
             new GenericContainer<>(REDIS_IMG).withExposedPorts(6379).waitingFor(Wait.forListeningPort());
 
@@ -57,6 +49,32 @@ public abstract class BaseIT {
         postgres.start();
         kafka.start();
         redis.start();
+    }
+
+    protected WebSocketStompClient stompClient;
+    protected StompSession stompSession;
+    @Autowired
+    protected TestRestTemplate http;
+    @LocalServerPort
+    private int port;
+
+    @DynamicPropertySource
+    static void injectProps(DynamicPropertyRegistry r) {
+        // Postgres
+        r.add("spring.datasource.url", postgres::getJdbcUrl);
+        r.add("spring.datasource.username", postgres::getUsername);
+        r.add("spring.datasource.password", postgres::getPassword);
+
+        // Kafka
+        r.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        r.add("spring.kafka.producer.bootstrap-servers", kafka::getBootstrapServers);
+        r.add("spring.kafka.consumer.bootstrap-servers", kafka::getBootstrapServers);
+        r.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
+        r.add("spring.kafka.consumer.group-id", () -> "test-consumer-group");
+
+        // Redis
+        r.add("spring.data.redis.host", redis::getHost);
+        r.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
     }
 
     protected void setupWebSocketClient() throws ExecutionException, InterruptedException, TimeoutException {
@@ -82,7 +100,8 @@ public abstract class BaseIT {
         String wsUrl = "ws://localhost:" + port + "/ws";
 
         this.stompSession = stompClient
-                .connectAsync(wsUrl, handshakeHeaders, connectHeaders, new StompSessionHandlerAdapter() {})
+                .connectAsync(wsUrl, handshakeHeaders, connectHeaders, new StompSessionHandlerAdapter() {
+                })
                 .get(5, TimeUnit.SECONDS);
     }
 
@@ -103,28 +122,6 @@ public abstract class BaseIT {
 
         return completableFuture;
     }
-
-    @DynamicPropertySource
-    static void injectProps(DynamicPropertyRegistry r) {
-        // Postgres
-        r.add("spring.datasource.url", postgres::getJdbcUrl);
-        r.add("spring.datasource.username", postgres::getUsername);
-        r.add("spring.datasource.password", postgres::getPassword);
-
-        // Kafka
-        r.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-        r.add("spring.kafka.producer.bootstrap-servers", kafka::getBootstrapServers);
-        r.add("spring.kafka.consumer.bootstrap-servers", kafka::getBootstrapServers);
-        r.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
-        r.add("spring.kafka.consumer.group-id", () -> "test-consumer-group");
-
-        // Redis
-        r.add("spring.data.redis.host", redis::getHost);
-        r.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
-    }
-
-    @Autowired
-    protected TestRestTemplate http;
 
     protected HttpHeaders createAuthHeaders(String token) {
         HttpHeaders headers = new HttpHeaders();

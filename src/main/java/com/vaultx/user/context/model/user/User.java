@@ -3,17 +3,18 @@ package com.vaultx.user.context.model.user;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vaultx.user.context.model.activity.Activity;
 import jakarta.persistence.*;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.time.Instant;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")

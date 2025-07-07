@@ -3,12 +3,13 @@ package com.vaultx.user.context.model.messaging;
 import com.vaultx.user.context.model.file.ChatFile;
 import com.vaultx.user.context.model.user.User;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "chat_messages")

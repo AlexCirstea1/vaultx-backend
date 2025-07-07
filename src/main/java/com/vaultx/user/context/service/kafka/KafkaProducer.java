@@ -10,13 +10,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class KafkaProducer {
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-
     private static final String BLOCKCHAIN_TOPIC = "blockchain.transactions";
     private static final String USER_REGISTRATION_TOPIC = "users.registration";
     private static final String USER_KEY_ROTATION_TOPIC = "users.key-rotation";
     private static final String USER_ROLE_TOPIC = "users.role-change";
     private static final String CHAT_TOPIC = "chats.events";
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public KafkaProducer(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;

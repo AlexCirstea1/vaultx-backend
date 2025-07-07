@@ -4,6 +4,13 @@ import com.vaultx.user.context.model.blockchain.DIDEvent;
 import com.vaultx.user.context.model.blockchain.EventHistory;
 import com.vaultx.user.context.model.blockchain.StatsResponse;
 import com.vaultx.user.context.service.user.BlockchainService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -11,12 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/blockchain/events")
@@ -57,19 +58,25 @@ public class BlockchainController {
                 .collect(Collectors.toList());
     }
 
-    /** Retrieve single event details */
+    /**
+     * Retrieve single event details
+     */
     @GetMapping("/{id}")
     public DIDEvent detail(@PathVariable UUID id) {
         return bc.getEvent(id);
     }
 
-    /** Retrieve on-chain history for an event */
+    /**
+     * Retrieve on-chain history for an event
+     */
     @GetMapping("/{id}/history")
     public List<EventHistory> history(@PathVariable UUID id) {
         return bc.getEventHistory(id);
     }
 
-    /** Export events as CSV */
+    /**
+     * Export events as CSV
+     */
     @GetMapping("/export")
     public ResponseEntity<InputStreamResource> exportCsv(@RequestParam UUID userId) {
         List<DIDEvent> events = bc.getEventsByUser(userId);
@@ -84,7 +91,9 @@ public class BlockchainController {
                 .body(isr);
     }
 
-    /** Simple stats: count by event type */
+    /**
+     * Simple stats: count by event type
+     */
     @GetMapping("/stats")
     public StatsResponse stats(@RequestParam UUID userId) {
         List<DIDEvent> events = bc.getEventsByUser(userId);

@@ -1,8 +1,6 @@
 package com.vaultx.user.context.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Duration;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.cache.annotation.EnableCaching;
@@ -16,6 +14,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Duration;
+import java.util.Objects;
 
 @Configuration
 @EnableCaching

@@ -12,9 +12,6 @@ import com.vaultx.user.context.service.user.ActivityService;
 import com.vaultx.user.context.service.user.UserService;
 import com.vaultx.user.context.utils.Utils;
 import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -25,6 +22,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor

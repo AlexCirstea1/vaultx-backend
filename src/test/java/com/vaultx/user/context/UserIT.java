@@ -1,7 +1,5 @@
 package com.vaultx.user.context;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.vaultx.user.context.model.PublicKeyResponse;
 import com.vaultx.user.context.model.activity.ActivityResponseDTO;
 import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
@@ -9,13 +7,16 @@ import com.vaultx.user.context.model.authentication.response.UserResponseDTO;
 import com.vaultx.user.context.model.user.UserReportRequest;
 import com.vaultx.user.context.util.AuthTestUtils;
 import com.vaultx.user.context.util.TestCredentialsGenerator;
-import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class UserIT extends BaseIT {
 
@@ -178,7 +179,8 @@ class UserIT extends BaseIT {
                 "/api/user/public/" + userId + "/roles",
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<String>>() {});
+                new ParameterizedTypeReference<List<String>>() {
+                });
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotEmpty();
@@ -195,7 +197,8 @@ class UserIT extends BaseIT {
                 "/api/user/activities?type=all",
                 HttpMethod.GET,
                 requestEntity,
-                new ParameterizedTypeReference<List<ActivityResponseDTO>>() {});
+                new ParameterizedTypeReference<List<ActivityResponseDTO>>() {
+                });
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();

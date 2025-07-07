@@ -1,6 +1,5 @@
 package com.vaultx.user.context.service.file;
 
-import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.file.ChatFile;
 import com.vaultx.user.context.model.file.FileUploadMeta;
 import com.vaultx.user.context.model.file.FileUploadResponse;
@@ -12,14 +11,13 @@ import com.vaultx.user.context.repository.ChatMessageRepository;
 import com.vaultx.user.context.service.user.BlockchainService;
 import com.vaultx.user.context.service.user.UserService;
 import jakarta.transaction.Transactional;
-
-import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.UUID;
 
 import static com.vaultx.user.context.model.blockchain.EventType.FILE_UPLOAD;
 

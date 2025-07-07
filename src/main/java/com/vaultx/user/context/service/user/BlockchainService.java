@@ -5,16 +5,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.vaultx.user.context.model.activity.ActivityType;
 import com.vaultx.user.context.model.blockchain.DIDEvent;
 import com.vaultx.user.context.model.blockchain.EventHistory;
 import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.service.kafka.KafkaProducer;
-import java.time.Instant;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -24,6 +19,11 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.time.Instant;
+import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 
 import static com.vaultx.user.context.model.activity.ActivityType.BLOCKCHAIN;
 import static com.vaultx.user.context.model.blockchain.EventType.*;
@@ -52,63 +52,6 @@ public class BlockchainService {
         this.baseUrl = baseUrl;
         this.username = username;
         this.password = password;
-    }
-
-    private HttpHeaders createBasicAuthHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        if (username != null && !username.isEmpty() && password != null) {
-            String auth = username + ":" + password;
-            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-            headers.set("Authorization", "Basic " + encodedAuth);
-        }
-        return headers;
-    }
-
-    public List<DIDEvent> getEventsByUser(UUID userId) {
-        String url = String.format("%s/api/chaincode/queryEventsByUser?userId=%s", baseUrl, userId);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
-        ResponseEntity<List<DIDEvent>> resp =
-                rest.exchange(url, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<>() {});
-        return resp.getBody();
-    }
-
-    public DIDEvent getEvent(UUID eventId) {
-        String url = String.format("%s/api/chaincode/queryEvent?eventId=%s", baseUrl, eventId);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
-        return rest.exchange(url, HttpMethod.GET, requestEntity, DIDEvent.class).getBody();
-    }
-
-    public List<EventHistory> getEventHistory(UUID eventId) {
-        String url = String.format("%s/api/chaincode/queryHistory?eventId=%s", baseUrl, eventId);
-        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
-        ResponseEntity<List<EventHistory>> resp =
-                rest.exchange(url, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<>() {});
-        return resp.getBody();
-    }
-
-    /**
-     * Send a DIDEvent to Kafka whenever a user is registered, updates their key, etc.
-     *
-     * @param user    The user
-     * @param eventType The type of event (REGISTER, KEY_UPDATED, ROLE_CHANGED)
-     */
-    public void recordDIDEvent(User user, EventType eventType, Object payload) {
-
-        if (!user.isBlockchainConsent()) return;
-
-        String jsonPayload = payload != null ? serializeToJson(payload) : null;
-        DIDEvent event = new DIDEvent(user.getId(), user.getPublicKey(), eventType, Instant.now(), jsonPayload);
-
-        kafkaProducer.sendDIDEvent(event);
-
-        String description = getDescription(eventType);
-        activityService.logActivity(
-                user,
-                BLOCKCHAIN,
-                description,
-                false,
-                "Event Type: " + eventType + ", Transaction ID: 0x"
-                        + UUID.randomUUID().toString().replace("-", ""));
     }
 
     /**
@@ -149,5 +92,64 @@ public class BlockchainService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error serializing object to JSON", e);
         }
+    }
+
+    private HttpHeaders createBasicAuthHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        if (username != null && !username.isEmpty() && password != null) {
+            String auth = username + ":" + password;
+            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+            headers.set("Authorization", "Basic " + encodedAuth);
+        }
+        return headers;
+    }
+
+    public List<DIDEvent> getEventsByUser(UUID userId) {
+        String url = String.format("%s/api/chaincode/queryEventsByUser?userId=%s", baseUrl, userId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
+        ResponseEntity<List<DIDEvent>> resp =
+                rest.exchange(url, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<>() {
+                });
+        return resp.getBody();
+    }
+
+    public DIDEvent getEvent(UUID eventId) {
+        String url = String.format("%s/api/chaincode/queryEvent?eventId=%s", baseUrl, eventId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
+        return rest.exchange(url, HttpMethod.GET, requestEntity, DIDEvent.class).getBody();
+    }
+
+    public List<EventHistory> getEventHistory(UUID eventId) {
+        String url = String.format("%s/api/chaincode/queryHistory?eventId=%s", baseUrl, eventId);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(createBasicAuthHeaders());
+        ResponseEntity<List<EventHistory>> resp =
+                rest.exchange(url, HttpMethod.GET, requestEntity, new ParameterizedTypeReference<>() {
+                });
+        return resp.getBody();
+    }
+
+    /**
+     * Send a DIDEvent to Kafka whenever a user is registered, updates their key, etc.
+     *
+     * @param user      The user
+     * @param eventType The type of event (REGISTER, KEY_UPDATED, ROLE_CHANGED)
+     */
+    public void recordDIDEvent(User user, EventType eventType, Object payload) {
+
+        if (!user.isBlockchainConsent()) return;
+
+        String jsonPayload = payload != null ? serializeToJson(payload) : null;
+        DIDEvent event = new DIDEvent(user.getId(), user.getPublicKey(), eventType, Instant.now(), jsonPayload);
+
+        kafkaProducer.sendDIDEvent(event);
+
+        String description = getDescription(eventType);
+        activityService.logActivity(
+                user,
+                BLOCKCHAIN,
+                description,
+                false,
+                "Event Type: " + eventType + ", Transaction ID: 0x"
+                        + UUID.randomUUID().toString().replace("-", ""));
     }
 }

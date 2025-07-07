@@ -1,10 +1,10 @@
 package com.vaultx.user.context.mapper;
 
 import com.vaultx.user.context.model.file.ChatFile;
+import com.vaultx.user.context.model.file.FileInfo;
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import com.vaultx.user.context.model.messaging.MessageType;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
-import com.vaultx.user.context.model.file.FileInfo;
 import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -16,10 +16,10 @@ public interface ChatMessageMapper {
     ChatMessageDTO toDto(ChatMessage entity);
 
     @Named("withType")
-    @Mapping(target = "sender",    expression = "java(entity.getSender().getId().toString())")
+    @Mapping(target = "sender", expression = "java(entity.getSender().getId().toString())")
     @Mapping(target = "recipient", expression = "java(entity.getRecipient().getId().toString())")
-    @Mapping(target = "file",      expression = "java(mapFileInfo(entity.getFile()))")
-    @Mapping(target = "type",       source = "type")
+    @Mapping(target = "file", expression = "java(mapFileInfo(entity.getFile()))")
+    @Mapping(target = "type", source = "type")
     ChatMessageDTO toDtoWithType(ChatMessage entity, String type);
 
     @BeanMapping(ignoreByDefault = false)

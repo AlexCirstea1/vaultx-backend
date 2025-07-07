@@ -1,7 +1,5 @@
 package com.vaultx.user.context;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.vaultx.user.context.model.authentication.request.LoginDTO;
 import com.vaultx.user.context.model.authentication.response.LoginResponseDTO;
 import com.vaultx.user.context.model.authentication.response.RegistrationDTO;
@@ -11,6 +9,8 @@ import com.vaultx.user.context.util.TestCredentialsGenerator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class AuthenticationIT extends BaseIT {
 

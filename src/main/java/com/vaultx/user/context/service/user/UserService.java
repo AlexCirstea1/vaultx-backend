@@ -12,8 +12,6 @@ import com.vaultx.user.context.model.user.User;
 import com.vaultx.user.context.model.user.UserReportRequest;
 import com.vaultx.user.context.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.*;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -23,6 +21,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service for user management operations.

@@ -1,7 +1,8 @@
 package com.vaultx.user.context.model.messaging.dto;
 
-import java.util.List;
 import lombok.*;
+
+import java.util.List;
 
 @Getter
 @Setter

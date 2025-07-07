@@ -41,12 +41,12 @@ public class AuthenticationController {
             summary = "Verify a JWT token",
             description = "Checks if a provided JWT token is valid and not expired",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Token validity status"),
-                @ApiResponse(responseCode = "401", description = "Invalid token format", content = @Content)
+                    @ApiResponse(responseCode = "200", description = "Token validity status"),
+                    @ApiResponse(responseCode = "401", description = "Invalid token format", content = @Content)
             })
     public ResponseEntity<Boolean> verifyToken(
             @Parameter(description = "JWT token with Bearer prefix") @RequestHeader("Authorization")
-                    String authorizationHeader) {
+            String authorizationHeader) {
         String token = authorizationHeader.replace("Bearer ", "");
         boolean isValid = loginService.verifyToken(token);
         return ResponseEntity.ok(isValid);
@@ -57,9 +57,9 @@ public class AuthenticationController {
             summary = "Save user PIN",
             description = "Saves a 6-digit PIN for the authenticated user",
             responses = {
-                @ApiResponse(responseCode = "200", description = "PIN saved successfully"),
-                @ApiResponse(responseCode = "400", description = "Invalid PIN format", content = @Content),
-                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+                    @ApiResponse(responseCode = "200", description = "PIN saved successfully"),
+                    @ApiResponse(responseCode = "400", description = "Invalid PIN format", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
             })
     public ResponseEntity<Void> savePin(
             HttpServletRequest request, @Parameter(description = "6-digit PIN") @RequestParam String pin) {
@@ -72,9 +72,9 @@ public class AuthenticationController {
             summary = "Verify user PIN",
             description = "Verifies that the provided PIN matches the stored PIN for the authenticated user",
             responses = {
-                @ApiResponse(responseCode = "200", description = "PIN verification result"),
-                @ApiResponse(responseCode = "400", description = "Invalid PIN format", content = @Content),
-                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+                    @ApiResponse(responseCode = "200", description = "PIN verification result"),
+                    @ApiResponse(responseCode = "400", description = "Invalid PIN format", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
             })
     public ResponseEntity<Boolean> verifyPin(
             HttpServletRequest request, @Parameter(description = "6-digit PIN") @RequestParam String pin) {
@@ -86,14 +86,14 @@ public class AuthenticationController {
             summary = "Register a new user",
             description = "Creates a new user account with the provided details",
             responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "User registered successfully",
-                        content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
-                @ApiResponse(
-                        responseCode = "400",
-                        description = "Invalid registration data or user already exists",
-                        content = @Content)
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "User registered successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid registration data or user already exists",
+                            content = @Content)
             })
     public ResponseEntity<UserResponseDTO> registerUser(@RequestBody RegistrationDTO dto, HttpServletRequest request) {
         return ResponseEntity.ok(registrationService.registerUser(request, dto));
@@ -104,11 +104,11 @@ public class AuthenticationController {
             summary = "Register a random user",
             description = "Creates a new user account with random credentials but specified password",
             responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "Random user registered successfully",
-                        content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
-                @ApiResponse(responseCode = "400", description = "Invalid password data", content = @Content)
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Random user registered successfully",
+                            content = @Content(schema = @Schema(implementation = UserResponseDTO.class))),
+                    @ApiResponse(responseCode = "400", description = "Invalid password data", content = @Content)
             })
     public ResponseEntity<UserResponseDTO> registerDefaultUser(@RequestBody String password) {
         return ResponseEntity.ok(registrationService.registerRandomUser(password));
@@ -119,11 +119,11 @@ public class AuthenticationController {
             summary = "User login",
             description = "Authenticates a user and returns access and refresh tokens",
             responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "Login successful",
-                        content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
-                @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content)
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Login successful",
+                            content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication failed", content = @Content)
             })
     public ResponseEntity<LoginResponseDTO> loginUser(HttpServletRequest request, @RequestBody LoginDTO dto) {
         return ResponseEntity.ok(loginService.loginUser(request, dto));
@@ -134,11 +134,11 @@ public class AuthenticationController {
             summary = "Refresh access token",
             description = "Generates a new access token using a valid refresh token",
             responses = {
-                @ApiResponse(
-                        responseCode = "200",
-                        description = "Token refreshed successfully",
-                        content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
-                @ApiResponse(responseCode = "401", description = "Invalid refresh token", content = @Content)
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Token refreshed successfully",
+                            content = @Content(schema = @Schema(implementation = LoginResponseDTO.class))),
+                    @ApiResponse(responseCode = "401", description = "Invalid refresh token", content = @Content)
             })
     public ResponseEntity<LoginResponseDTO> refreshAccessToken(
             HttpServletRequest request, @RequestBody String refreshTokenJson) {
@@ -154,8 +154,8 @@ public class AuthenticationController {
             summary = "User logout",
             description = "Invalidates the user's session and tokens",
             responses = {
-                @ApiResponse(responseCode = "200", description = "Logout successful"),
-                @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+                    @ApiResponse(responseCode = "200", description = "Logout successful"),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
             })
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         loginService.logout(request, userService);

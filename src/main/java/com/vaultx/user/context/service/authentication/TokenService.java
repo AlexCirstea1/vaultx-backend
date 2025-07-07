@@ -8,14 +8,6 @@ import com.vaultx.user.context.model.user.UserSession;
 import com.vaultx.user.context.repository.UserRepository;
 import com.vaultx.user.context.service.user.ActivityService;
 import com.vaultx.user.context.utils.RSAKeyProperties;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -26,6 +18,15 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.Base64;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -175,7 +176,7 @@ public class TokenService {
                 log.warn("No session found for user ID: {} --> Skipping...", userId);
                 return null;
             }
-                // Explicitly cast or deserialize the object into UserSession
+            // Explicitly cast or deserialize the object into UserSession
             case LinkedHashMap linkedHashMap -> {
                 // Manually map LinkedHashMap to UserSession if needed
                 return objectMapper.convertValue(sessionObject, UserSession.class);

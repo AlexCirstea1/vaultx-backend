@@ -132,6 +132,23 @@ public class ChatController {
         chatService.handleUserSearch(payload, currentUserId);
     }
 
+    @DeleteMapping("/api/messages/{id}")
+    @Operation(
+            summary = "Delete message",
+            description = "Deletes a specific message sent by the current user",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Message deleted successfully"),
+                    @ApiResponse(responseCode = "404", description = "Message not found", content = @Content),
+                    @ApiResponse(responseCode = "403", description = "Not authorized to delete this message", content = @Content),
+                    @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content)
+            })
+    public ResponseEntity<?> deleteMessage(
+            @Parameter(description = "ID of the message to delete", required = true) @PathVariable("id") UUID id,
+            Authentication authentication) {
+        String currentUserId = ((Jwt) authentication.getPrincipal()).getSubject();
+        return chatService.deleteMessage(id, currentUserId);
+    }
+
     // Group Chat Endpoints
 
     @PostMapping("/api/group-chats")

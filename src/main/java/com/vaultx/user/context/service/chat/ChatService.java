@@ -69,6 +69,19 @@ public class ChatService {
         return privateChatService.deleteConversation(request, participantId);
     }
 
+    public ResponseEntity<?> deleteMessage(UUID messageId, String currentUserId) {
+        try {
+            UUID currentUserUuid = UUID.fromString(currentUserId);
+            return privateChatService.deleteMessage(messageId, currentUserUuid);
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error deleting message", e);
+            throw new ResponseStatusException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete message: " + e.getMessage());
+        }
+    }
+
     // User Search Operation
 
     public void handleUserSearch(String payload, String currentUserId) {

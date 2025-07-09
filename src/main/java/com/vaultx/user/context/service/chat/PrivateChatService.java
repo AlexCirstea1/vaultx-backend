@@ -53,7 +53,7 @@ public class PrivateChatService {
         User senderUser = userService.getUserById(senderUuid);
         User recipientUser = userService.getUserById(recipientUuid);
 
-        // Determine message type based on file presence
+        // Determine a message type based on file presence
         MessageType messageType = (chatMessageDto.getFile() != null) ? MessageType.FILE : MessageType.NORMAL;
         String ciphertext = (messageType == MessageType.FILE) ? "__FILE__" : chatMessageDto.getCiphertext();
 
@@ -296,6 +296,48 @@ public class PrivateChatService {
                     "Deleted one-time messages after reading",
                     false,
                     "Messages deleted: " + oneTimeMessages.size());
+        }
+    }
+
+    @Transactional
+    public ResponseEntity<?> deleteMessage(UUID messageId, UUID currentUserId) {
+        // Find the message
+        ChatMessage message = chatMessageRepository.findById(messageId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Message not found"));
+
+        // Check if user is authorized (must be the sender)
+        if (!message.getSender().getId().equals(currentUserId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete messages you've sent");
+        }
+
+        // If message has associated file, delete it first
+        if (message.getMessageType() == MessageType.FILE) {
+            chatFileRepository.deleteByMessageId(message.getId());
+        }
+
+        // Delete the message
+        chatMessageRepository.delete(message);
+
+        // Notify the recipient about message deletion
+        notifyMessageDeletion(message);
+
+        return ResponseEntity.ok("Message deleted successfully");
+    }
+
+    private void notifyMessageDeletion(ChatMessage message) {
+        try {
+            Map<String, Object> notification = Map.of(
+                    "type", "MESSAGE_DELETED",
+                    "messageId", message.getId().toString()
+            );
+
+            messagingTemplate.convertAndSendToUser(
+                    message.getRecipient().getId().toString(),
+                    "/queue/notifications",
+                    notification
+            );
+        } catch (Exception e) {
+            log.error("Failed to send message deletion notification", e);
         }
     }
 }

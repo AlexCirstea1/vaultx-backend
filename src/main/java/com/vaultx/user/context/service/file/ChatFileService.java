@@ -22,7 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -109,7 +108,7 @@ public class ChatFileService {
 
         // Calculate hash of the encrypted file for authenticity verification using CipherUtils
         byte[] fileBytes = file.getBytes();
-        String fileHash = CipherUtils.getHash(new String(fileBytes, StandardCharsets.ISO_8859_1));
+        String fileHash = CipherUtils.getHash(fileBytes);
 
         // Create enhanced metadata including file hash and size
         FileBlockchainMeta blockchainMeta = FileBlockchainMeta.builder()

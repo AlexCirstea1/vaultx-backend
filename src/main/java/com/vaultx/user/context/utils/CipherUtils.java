@@ -12,14 +12,19 @@ import java.util.Base64;
 
 public class CipherUtils {
 
-    public static String getHash(String input) {
+    public static String getHash(byte[] data) {
         try {
-            var hash = MessageDigest.getInstance("SHA-256");
-            byte[] hashedBytes = hash.digest(input.getBytes());
-            return Base64.getEncoder().encodeToString(hashedBytes);
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(data);
+            return Base64.getEncoder().encodeToString(digest);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    // Deprecated: remove or keep for backwards compatibility
+    public static String getHash(String input) {
+        return getHash(input.getBytes(/* choose correct charset if needed */));
     }
 
     public static String encryptPrivateKey(String privateKeyBase64) {

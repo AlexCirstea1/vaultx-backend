@@ -6,7 +6,6 @@ import com.vaultx.user.context.model.file.*;
 import com.vaultx.user.context.service.file.ChatFileService;
 import com.vaultx.user.context.service.file.FileStorageService;
 import com.vaultx.user.context.service.user.BlockchainService;
-import com.vaultx.user.context.utils.CipherUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Slf4j
@@ -35,6 +33,7 @@ public class FileController {
     private final FileStorageService storage;
     private final ChatFileService chatFileService;
     private final BlockchainService blockchainService;
+    private final ObjectMapper objectMapper;
 
     /* ───────────────  UPLOAD  ─────────────── */
 
@@ -92,7 +91,7 @@ public class FileController {
     }
 
     @PostMapping("/{fileId}/validate")
-    @Operation(summary = "Validate file integrity against blockchain record")
+    @Operation(summary = "Validate file integrity against blockchain records")
     public ResponseEntity<FileValidationResponse> validateFile(
             @PathVariable UUID fileId,
             @RequestPart("file") MultipartFile file,
@@ -100,61 +99,68 @@ public class FileController {
 
         String requesterId = ((Jwt) authentication.getPrincipal()).getSubject();
 
-        // Authorize access to the file
-        ChatFile fileMetadata = chatFileService.authoriseAndGet(fileId, requesterId);
+        // 1) Authorize and fetch file metadata
+        ChatFile fileMeta = chatFileService.authoriseAndGet(fileId, requesterId);
 
-        var otherUserId = fileMetadata.getMessage().getSender().getId();
+        // Determine both participants
+        UUID senderId = fileMeta.getMessage().getSender().getId();
+        UUID recipientId = fileMeta.getMessage().getRecipient().getId();
 
-        // Get blockchain record for this file
-        DIDEvent blockchainEvent = blockchainService.getFileEvent(UUID.fromString(requesterId), fileId);
-
-        // Try recipient’s blockchain record if none for requester
-        if (blockchainEvent == null) {
-            blockchainEvent = blockchainService.getFileEvent(otherUserId, fileId);
-        }
-        if (blockchainEvent == null) {
-            return ResponseEntity.ok(FileValidationResponse.builder()
-                    .fileId(fileId)
-                    .isValid(false)
-                    .message("No blockchain record found for this file")
-                    .build());
+        // 2) Try to fetch matching FILE_UPLOAD event from requester, then from the other user
+        DIDEvent event = blockchainService.getFileEvent(UUID.fromString(requesterId), fileId);
+        if (event == null) {
+            // fallback to sender or recipient depending on requester
+            UUID otherUserId = requesterId.equals(senderId.toString()) ? recipientId : senderId;
+            event = blockchainService.getFileEvent(otherUserId, fileId);
         }
 
+        if (event == null) {
+            return ResponseEntity.ok(
+                    FileValidationResponse.builder()
+                            .fileId(fileId)
+                            .isValid(false)
+                            .message("No blockchain record found for this file")
+                            .build()
+            );
+        }
+
+        // 3) Parse stored metadata
+        FileBlockchainMeta blockchainMeta;
         try {
-            // Parse blockchain metadata
-            ObjectMapper mapper = new ObjectMapper();
-            FileBlockchainMeta blockchainMeta = mapper.readValue(blockchainEvent.getPayload(), FileBlockchainMeta.class);
-
-            // Calculate hash of the uploaded file
-            byte[] fileBytes = file.getBytes();
-            String currentFileHash = CipherUtils.getHash(new String(fileBytes, StandardCharsets.ISO_8859_1));
-
-            // Compare hashes
-            boolean isValid = currentFileHash.equals(blockchainMeta.getFileHash());
-
-            String message = isValid ?
-                    "File integrity verified successfully" :
-                    "File has been modified - hash mismatch";
-
-            log.info("File {} validation result: {} (blockchain: {}, current: {})",
-                    fileId, isValid, blockchainMeta.getFileHash(), currentFileHash);
-
-            return ResponseEntity.ok(FileValidationResponse.builder()
-                    .fileId(fileId)
-                    .isValid(isValid)
-                    .message(message)
-                    .blockchainHash(blockchainMeta.getFileHash())
-                    .currentHash(currentFileHash)
-                    .uploadTimestamp(blockchainMeta.getUploadTimestamp())
-                    .build());
-
-        } catch (Exception e) {
-            log.error("Error validating file {}", fileId, e);
-            return ResponseEntity.ok(FileValidationResponse.builder()
-                    .fileId(fileId)
-                    .isValid(false)
-                    .message("Error processing validation: " + e.getMessage())
-                    .build());
+            blockchainMeta = objectMapper.readValue(event.getPayload(), FileBlockchainMeta.class);
+        } catch (Exception ex) {
+            log.error("Failed to parse FileBlockchainMeta from event {}", event.getEventId(), ex);
+            return ResponseEntity.ok(
+                    FileValidationResponse.builder()
+                            .fileId(fileId)
+                            .isValid(false)
+                            .message("Error parsing blockchain metadata")
+                            .build()
+            );
         }
+
+        // 4) Compute current hash from raw bytes
+        byte[] fileBytes = file.getBytes();
+        String currentHash = com.vaultx.user.context.utils.CipherUtils.getHash(fileBytes);
+        boolean isValid = currentHash.equals(blockchainMeta.getFileHash());
+
+        String msg = isValid
+                ? "File integrity verified successfully"
+                : "File has been modified - hash mismatch";
+
+        log.info("Validation for {}: {} (blockchain={}, current={})",
+                fileId, isValid, blockchainMeta.getFileHash(), currentHash);
+
+        // 5) Return structured response
+        return ResponseEntity.ok(
+                FileValidationResponse.builder()
+                        .fileId(fileId)
+                        .isValid(isValid)
+                        .message(msg)
+                        .blockchainHash(blockchainMeta.getFileHash())
+                        .currentHash(currentHash)
+                        .uploadTimestamp(blockchainMeta.getUploadTimestamp())
+                        .build()
+        );
     }
 }

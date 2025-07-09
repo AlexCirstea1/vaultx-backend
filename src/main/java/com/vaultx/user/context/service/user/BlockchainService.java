@@ -135,9 +135,11 @@ public class BlockchainService {
                 .filter(event -> event.getEventType() == FILE_UPLOAD)
                 .filter(event -> {
                     try {
-                        FileBlockchainMeta meta = new ObjectMapper().readValue(event.getPayload(), FileBlockchainMeta.class);
+                        ObjectMapper mapper = new ObjectMapper();
+                        FileBlockchainMeta meta = mapper.readValue(event.getPayload(), FileBlockchainMeta.class);
                         return meta.getFileId().equals(fileId);
                     } catch (Exception e) {
+                        log.warn("Failed to parse FileBlockchainMeta from event {}: {}", event.getEventId(), e.getMessage());
                         return false;
                     }
                 })

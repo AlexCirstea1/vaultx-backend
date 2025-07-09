@@ -103,7 +103,7 @@ public class FileController {
         // Authorize access to the file
         ChatFile fileMetadata = chatFileService.authoriseAndGet(fileId, requesterId);
 
-        var otherUserId = fileMetadata.getMessage().getRecipient().getId();
+        var otherUserId = fileMetadata.getMessage().getSender().getId();
 
         // Get blockchain record for this file
         DIDEvent blockchainEvent = blockchainService.getFileEvent(UUID.fromString(requesterId), fileId);

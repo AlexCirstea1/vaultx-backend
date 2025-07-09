@@ -19,6 +19,7 @@ import com.vaultx.user.context.service.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -29,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,10 @@ public class PrivateChatService {
     private final BlockService blockService;
     private final ActivityService activityService;
     private final ChatFileRepository chatFileRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    // Cache TTL in hours
+    private static final int CONVERSATION_CACHE_TTL = 24;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendPrivateMessage(ChatMessageDTO chatMessageDto, String senderId) {
@@ -94,15 +100,34 @@ public class PrivateChatService {
 
         // Prepare and send messages
         sendMessageNotifications(entity, chatMessageDto);
+
+        // Invalidate conversation cache
+        invalidateConversationCache(senderUuid, recipientUuid);
     }
 
     public List<ChatMessageDTO> getConversation(String currentUserId, String participantId) {
         UUID currentUserUuid = UUID.fromString(currentUserId);
         UUID participantUuid = UUID.fromString(participantId);
 
-        List<ChatMessage> conversation = chatMessageRepository.findConversation(currentUserUuid, participantUuid);
+        // Try to get conversation from cache first
+        String cacheKey = getConversationCacheKey(currentUserUuid, participantUuid);
+        @SuppressWarnings("unchecked")
+        List<ChatMessageDTO> cachedConversation = (List<ChatMessageDTO>) redisTemplate.opsForValue().get(cacheKey);
 
-        return conversation.stream().map(this::enhanceChatMessageDto).toList();
+        if (cachedConversation != null) {
+            log.info("Retrieved conversation from cache for users {} and {}", currentUserId, participantId);
+            return cachedConversation;
+        }
+
+        // If not in cache, get from database
+        log.info("Cache miss for conversation between {} and {}, fetching from database", currentUserId, participantId);
+        List<ChatMessage> conversation = chatMessageRepository.findConversation(currentUserUuid, participantUuid);
+        List<ChatMessageDTO> result = conversation.stream().map(this::enhanceChatMessageDto).toList();
+
+        // Cache the result
+        redisTemplate.opsForValue().set(cacheKey, result, CONVERSATION_CACHE_TTL, TimeUnit.HOURS);
+
+        return result;
     }
 
     private ChatMessageDTO enhanceChatMessageDto(ChatMessage entity) {
@@ -164,6 +189,11 @@ public class PrivateChatService {
         // Process messages
         processReadMessages(unread, currentUserUuid);
 
+        // Invalidate conversation caches for each sender-recipient pair
+        unread.forEach(message -> {
+            invalidateConversationCache(message.getSender().getId(), message.getRecipient().getId());
+        });
+
         return ResponseEntity.ok("Messages marked as read.");
     }
 
@@ -181,6 +211,11 @@ public class PrivateChatService {
             List<ChatMessage> unread = findUnreadMessages(messageIds, currentUserUuid);
             if (!unread.isEmpty()) {
                 processReadMessages(unread, currentUserUuid);
+
+                // Invalidate conversation caches
+                unread.forEach(message -> {
+                    invalidateConversationCache(message.getSender().getId(), message.getRecipient().getId());
+                });
             }
         } catch (Exception e) {
             log.error("Error marking messages as read via STOMP", e);
@@ -202,6 +237,9 @@ public class PrivateChatService {
 
             // Delete the messages
             chatMessageRepository.deleteAll(conversation);
+
+            // Invalidate cache
+            invalidateConversationCache(currentUserUuid, participantUuid);
 
             return ResponseEntity.ok("Conversation deleted successfully.");
         } catch (IllegalArgumentException e) {
@@ -318,6 +356,9 @@ public class PrivateChatService {
         // Delete the message
         chatMessageRepository.delete(message);
 
+        // Invalidate cache
+        invalidateConversationCache(message.getSender().getId(), message.getRecipient().getId());
+
         // Notify the recipient about message deletion
         notifyMessageDeletion(message);
 
@@ -339,5 +380,20 @@ public class PrivateChatService {
         } catch (Exception e) {
             log.error("Failed to send message deletion notification", e);
         }
+    }
+
+    // Cache utility methods
+
+    private String getConversationCacheKey(UUID user1Id, UUID user2Id) {
+        // Ensure consistent key regardless of which user is first
+        UUID[] ids = new UUID[]{user1Id, user2Id};
+        Arrays.sort(ids, Comparator.comparing(UUID::toString));
+        return "chat:conversation:" + ids[0] + ":" + ids[1];
+    }
+
+    private void invalidateConversationCache(UUID user1Id, UUID user2Id) {
+        String cacheKey = getConversationCacheKey(user1Id, user2Id);
+        redisTemplate.delete(cacheKey);
+        log.info("Invalidated conversation cache for users {} and {}", user1Id, user2Id);
     }
 }

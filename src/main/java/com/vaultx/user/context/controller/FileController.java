@@ -6,6 +6,7 @@ import com.vaultx.user.context.model.file.*;
 import com.vaultx.user.context.service.file.ChatFileService;
 import com.vaultx.user.context.service.file.FileStorageService;
 import com.vaultx.user.context.service.user.BlockchainService;
+import com.vaultx.user.context.utils.CipherUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -94,7 +95,8 @@ public class FileController {
     @Operation(summary = "Validate file integrity against blockchain records")
     public ResponseEntity<FileValidationResponse> validateFile(
             @PathVariable UUID fileId,
-            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "validateSource", defaultValue = "storage") String validateSource,
+            @RequestPart(value = "file", required = false) MultipartFile file,
             Authentication authentication) throws IOException {
 
         String requesterId = ((Jwt) authentication.getPrincipal()).getSubject();
@@ -109,7 +111,6 @@ public class FileController {
         // 2) Try to fetch matching FILE_UPLOAD event from requester, then from the other user
         DIDEvent event = blockchainService.getFileEvent(UUID.fromString(requesterId), fileId);
         if (event == null) {
-            // fallback to sender or recipient depending on requester
             UUID otherUserId = requesterId.equals(senderId.toString()) ? recipientId : senderId;
             event = blockchainService.getFileEvent(otherUserId, fileId);
         }
@@ -139,17 +140,30 @@ public class FileController {
             );
         }
 
-        // 4) Compute current hash from raw bytes
-        byte[] fileBytes = file.getBytes();
-        String currentHash = com.vaultx.user.context.utils.CipherUtils.getHash(fileBytes);
+        // 4) Compute current hash based on requested source
+        byte[] fileBytes;
+        String source;
+
+        if ("uploaded".equals(validateSource) && file != null) {
+            // Use the uploaded file for validation
+            fileBytes = file.getBytes();
+            source = "uploaded file";
+        } else {
+            // Default: use storage file for validation
+            Resource fileResource = storage.loadAsResource(fileId);
+            fileBytes = fileResource.getInputStream().readAllBytes();
+            source = "storage";
+        }
+
+        String currentHash = CipherUtils.getHash(fileBytes);
         boolean isValid = currentHash.equals(blockchainMeta.getFileHash());
 
         String msg = isValid
                 ? "File integrity verified successfully"
                 : "File has been modified - hash mismatch";
 
-        log.info("Validation for {}: {} (blockchain={}, current={})",
-                fileId, isValid, blockchainMeta.getFileHash(), currentHash);
+        log.info("Validation for {} (source: {}): {} (blockchain={}, current={})",
+                fileId, source, isValid, blockchainMeta.getFileHash(), currentHash);
 
         // 5) Return structured response
         return ResponseEntity.ok(

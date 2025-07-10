@@ -6,6 +6,7 @@ import com.vaultx.user.context.model.blockchain.EventType;
 import com.vaultx.user.context.model.messaging.ChatMessage;
 import com.vaultx.user.context.model.messaging.ChatRequest;
 import com.vaultx.user.context.model.messaging.ChatRequestStatus;
+import com.vaultx.user.context.model.messaging.MessageType;
 import com.vaultx.user.context.model.messaging.dto.ChatMessageDTO;
 import com.vaultx.user.context.model.messaging.dto.ChatRequestDTO;
 import com.vaultx.user.context.model.user.User;
@@ -114,6 +115,7 @@ public class ChatRequestService {
                 .senderKeyVersion(request.getSenderKeyVersion())
                 .recipientKeyVersion(request.getRecipientKeyVersion())
                 .timestamp(LocalDateTime.now())
+                .messageType(MessageType.NORMAL)
                 .isRead(false)
                 .oneTime(false)
                 .build();

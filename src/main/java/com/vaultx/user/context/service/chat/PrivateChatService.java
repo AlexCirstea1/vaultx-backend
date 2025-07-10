@@ -52,7 +52,6 @@ public class PrivateChatService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sendPrivateMessage(ChatMessageDTO dto, String senderId) {
 
-        /* ── 0. Resolve users & anti-abuse checks ───────────────────────── */
         UUID senderUuid = UUID.fromString(senderId);
         UUID recipientUuid = UUID.fromString(dto.getRecipient());
         checkBlockStatus(senderUuid, recipientUuid);
@@ -60,38 +59,36 @@ public class PrivateChatService {
         User senderUser = userService.getUserById(senderUuid);
         User recipientUser = userService.getUserById(recipientUuid);
 
-        /* ── 1. Build & persist the ChatMessage row ──────────────────────── */
         boolean isFile = dto.getFile() != null;
-        MessageType msgType = isFile ? MessageType.FILE : MessageType.NORMAL;
-        String cipher = isFile ? "__FILE__" : dto.getCiphertext();
+        MessageType type = isFile ? MessageType.FILE : MessageType.NORMAL;
 
         ChatMessage msg = ChatMessage.builder()
                 .sender(senderUser)
                 .recipient(recipientUser)
-                .ciphertext(cipher)
-                .encryptedKeyForRecipient(dto.getEncryptedKeyForRecipient())
+                .ciphertext(isFile ? "__FILE__" : dto.getCiphertext())
                 .encryptedKeyForSender(dto.getEncryptedKeyForSender())
+                .encryptedKeyForRecipient(dto.getEncryptedKeyForRecipient())
                 .iv(dto.getIv())
                 .senderKeyVersion(dto.getSenderKeyVersion())
                 .recipientKeyVersion(dto.getRecipientKeyVersion())
-                .messageType(msgType)
+                .messageType(type)
                 .timestamp(LocalDateTime.now())
                 .isRead(false)
                 .oneTime(dto.isOneTime())
                 .build();
-        msg = chatMessageRepository.save(msg);          // managed ⬅️
 
-        /* ── 2.  If it’s a FILE message – create the ChatFile placeholder ── */
+        /* persist ChatMessage FIRST – it becomes managed */
+        msg = chatMessageRepository.save(msg);
+
+        /* add ChatFile only to the managed message; DO NOT save separately */
         if (isFile) {
             FileInfo fi = dto.getFile();
-
             ChatFile cf = ChatFile.builder()
-                    .id(fi.getFileId())                 // ↓ your mobile app generated this UUID
-                    .message(msg)                       // owning side
+                    .id(fi.getFileId())               // client-generated UUID
+                    .message(msg)                     // owning side
                     .fileName(fi.getFileName())
                     .mimeType(fi.getMimeType())
                     .sizeBytes(fi.getSizeBytes())
-                    /* crypto meta kept together with the file                */
                     .iv(dto.getIv())
                     .encryptedKeySender(dto.getEncryptedKeyForSender())
                     .encryptedKeyRecipient(dto.getEncryptedKeyForRecipient())
@@ -99,13 +96,9 @@ public class PrivateChatService {
                     .recipientKeyVersion(dto.getRecipientKeyVersion())
                     .build();
 
-            chatFileRepository.save(cf);                // ① persist **once**
-            // (msg is already managed; establishing the back-reference is optional
-            //  but nice for future reads)
-            msg.setFile(cf);                            // ② ONLY state change, no extra save
+            msg.setFile(cf);                          // cascade-PERSIST will save it
         }
 
-        /* ── 3. Notify both parties over WebSocket & invalidate cache ───── */
         sendMessageNotifications(msg, dto);
         invalidateConversationCache(senderUuid, recipientUuid);
     }

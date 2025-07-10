@@ -50,61 +50,66 @@ public class PrivateChatService {
     private static final int CONVERSATION_CACHE_TTL = 24;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void sendPrivateMessage(ChatMessageDTO chatMessageDto, String senderId) {
-        UUID senderUuid = UUID.fromString(senderId);
-        UUID recipientUuid = UUID.fromString(chatMessageDto.getRecipient());
+    public void sendPrivateMessage(ChatMessageDTO dto, String senderId) {
 
+        /* ── 0. Resolve users & anti-abuse checks ───────────────────────── */
+        UUID senderUuid = UUID.fromString(senderId);
+        UUID recipientUuid = UUID.fromString(dto.getRecipient());
         checkBlockStatus(senderUuid, recipientUuid);
 
         User senderUser = userService.getUserById(senderUuid);
         User recipientUser = userService.getUserById(recipientUuid);
 
-        // Determine a message type based on file presence
-        MessageType messageType = (chatMessageDto.getFile() != null) ? MessageType.FILE : MessageType.NORMAL;
-        String ciphertext = (messageType == MessageType.FILE) ? "__FILE__" : chatMessageDto.getCiphertext();
+        /* ── 1. Build & persist the ChatMessage row ──────────────────────── */
+        boolean isFile = dto.getFile() != null;
+        MessageType msgType = isFile ? MessageType.FILE : MessageType.NORMAL;
+        String cipher = isFile ? "__FILE__" : dto.getCiphertext();
 
-        // Build & save entity
-        ChatMessage entity = ChatMessage.builder()
+        ChatMessage msg = ChatMessage.builder()
                 .sender(senderUser)
                 .recipient(recipientUser)
-                .ciphertext(ciphertext)
-                .encryptedKeyForRecipient(chatMessageDto.getEncryptedKeyForRecipient())
-                .encryptedKeyForSender(chatMessageDto.getEncryptedKeyForSender())
-                .iv(chatMessageDto.getIv())
-                .senderKeyVersion(chatMessageDto.getSenderKeyVersion())
-                .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
-                .messageType(messageType)
+                .ciphertext(cipher)
+                .encryptedKeyForRecipient(dto.getEncryptedKeyForRecipient())
+                .encryptedKeyForSender(dto.getEncryptedKeyForSender())
+                .iv(dto.getIv())
+                .senderKeyVersion(dto.getSenderKeyVersion())
+                .recipientKeyVersion(dto.getRecipientKeyVersion())
+                .messageType(msgType)
                 .timestamp(LocalDateTime.now())
                 .isRead(false)
-                .oneTime(chatMessageDto.isOneTime())
+                .oneTime(dto.isOneTime())
                 .build();
-        entity = chatMessageRepository.save(entity);
+        msg = chatMessageRepository.save(msg);          // managed ⬅️
 
-        // If it's a file message, create ChatFile placeholder
-        if (messageType == MessageType.FILE && chatMessageDto.getFile() != null) {
-            FileInfo fileInfo = chatMessageDto.getFile();
-            ChatFile chatFile = ChatFile.builder()
-                    .id(fileInfo.getFileId())
-                    .message(entity)
-                    .fileName(fileInfo.getFileName())
-                    .mimeType(fileInfo.getMimeType())
-                    .sizeBytes(fileInfo.getSizeBytes())
-                    .iv(chatMessageDto.getIv())
-                    .encryptedKeySender(chatMessageDto.getEncryptedKeyForSender())
-                    .encryptedKeyRecipient(chatMessageDto.getEncryptedKeyForRecipient())
-                    .senderKeyVersion(chatMessageDto.getSenderKeyVersion())
-                    .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
+        /* ── 2.  If it’s a FILE message – create the ChatFile placeholder ── */
+        if (isFile) {
+            FileInfo fi = dto.getFile();
+
+            ChatFile cf = ChatFile.builder()
+                    .id(fi.getFileId())                 // ↓ your mobile app generated this UUID
+                    .message(msg)                       // owning side
+                    .fileName(fi.getFileName())
+                    .mimeType(fi.getMimeType())
+                    .sizeBytes(fi.getSizeBytes())
+                    /* crypto meta kept together with the file                */
+                    .iv(dto.getIv())
+                    .encryptedKeySender(dto.getEncryptedKeyForSender())
+                    .encryptedKeyRecipient(dto.getEncryptedKeyForRecipient())
+                    .senderKeyVersion(dto.getSenderKeyVersion())
+                    .recipientKeyVersion(dto.getRecipientKeyVersion())
                     .build();
-            chatFileRepository.save(chatFile);
-            entity.setFile(chatFile);
+
+            chatFileRepository.save(cf);                // ① persist **once**
+            // (msg is already managed; establishing the back-reference is optional
+            //  but nice for future reads)
+            msg.setFile(cf);                            // ② ONLY state change, no extra save
         }
 
-        // Prepare and send messages
-        sendMessageNotifications(entity, chatMessageDto);
-
-        // Invalidate conversation cache
+        /* ── 3. Notify both parties over WebSocket & invalidate cache ───── */
+        sendMessageNotifications(msg, dto);
         invalidateConversationCache(senderUuid, recipientUuid);
     }
+
 
     public List<ChatMessageDTO> getConversation(String currentUserId, String participantId) {
         UUID currentUserUuid = UUID.fromString(currentUserId);

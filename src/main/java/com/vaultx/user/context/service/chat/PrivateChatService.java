@@ -96,6 +96,7 @@ public class PrivateChatService {
                     .recipientKeyVersion(chatMessageDto.getRecipientKeyVersion())
                     .build();
             chatFileRepository.save(chatFile);
+            entity.setFile(chatFile);
         }
 
         // Prepare and send messages

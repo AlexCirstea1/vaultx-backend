@@ -53,7 +53,7 @@ public class ChatMessage {
     @Builder.Default
     private MessageType messageType = MessageType.NORMAL;
 
-    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
+    @OneToOne(mappedBy = "message", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = true)
     private ChatFile file;
 
     @Column(name = "timestamp", nullable = false)
